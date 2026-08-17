@@ -37,8 +37,12 @@ dependencies:
 
   # Ajoutés pour l'appel au backend et le stockage sécurisé du token JWT
   http: ^1.6.0
-  flutter_secure_storage: ^9.2.2
+  flutter_secure_storage: ^8.1.0
   intl: ^0.20.3
+  image_picker: ^1.2.3
+  record: ^7.1.1
+  path_provider: ^2.1.6
+  audioplayers: ^6.8.1
 
 dev_dependencies:
   flutter_test:

@@ -13,16 +13,62 @@ class AscenseurService {
     return await _storage.read(key: 'jwt_token');
   }
 
-  Future<List<AscenseurModel>> getAscenseurs() async {
+  Future<Map<String, String>> _headers() async {
     final token = await _getToken();
     if (token == null) throw Exception("Token manquant");
+    return {
+      'Content-Type': 'application/json',
+      'Authorization': 'Bearer $token',
+    };
+  }
 
+  // ═══════════════════════════════════════════════════════════
+  // 🔹 CÔTÉ CLIENT (utilise le token JWT pour filtrer)
+  // ═══════════════════════════════════════════════════════════
+
+  /// GET /api/ascenseurs/mes-ascenseurs
+  /// Récupère les ascenseurs du CLIENT connecté (via token JWT)
+  Future<List<AscenseurModel>> getMesAscenseurs() async {
+    final response = await http.get(
+      Uri.parse('$baseUrl/mes-ascenseurs'),
+      headers: await _headers(),
+    );
+
+    if (response.statusCode == 200) {
+      final jsonResponse = jsonDecode(response.body);
+      final List<dynamic> dataList = jsonResponse['data'] ?? jsonResponse;
+      return dataList.map((json) => AscenseurModel.fromJson(json)).toList();
+    } else {
+      throw Exception('Erreur: ${response.statusCode} - ${response.body}');
+    }
+  }
+
+  /// GET /api/ascenseurs/{id}
+  /// Détail d'un ascenseur (utile côté client pour afficher les détails)
+  Future<AscenseurModel> getDetail(int id) async {
+    final response = await http.get(
+      Uri.parse('$baseUrl/$id'),
+      headers: await _headers(),
+    );
+
+    if (response.statusCode == 200) {
+      final jsonResponse = jsonDecode(response.body);
+      return AscenseurModel.fromJson(jsonResponse['data'] ?? jsonResponse);
+    } else {
+      throw Exception('Erreur: ${response.statusCode} - ${response.body}');
+    }
+  }
+
+  // ═══════════════════════════════════════════════════════════
+  // 🔹 CÔTÉ ADMIN / RESPONSABLE MAINTENANCE
+  // ═══════════════════════════════════════════════════════════
+
+  /// GET /api/ascenseurs
+  /// Liste TOUS les ascenseurs (admin/responsable)
+  Future<List<AscenseurModel>> getAscenseurs() async {
     final response = await http.get(
       Uri.parse(baseUrl),
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': 'Bearer $token',
-      },
+      headers: await _headers(),
     );
 
     if (response.statusCode == 200) {
@@ -34,58 +80,44 @@ class AscenseurService {
     }
   }
 
-  Future<List<UtilisateurModel>> getClients() async {
-    final token = await _getToken();
-    if (token == null) throw Exception("Token manquant");
-
+  /// GET /api/ascenseurs/client/{clientId}
+  /// Ascenseurs d'un client spécifique (vue admin/responsable)
+  Future<List<AscenseurModel>> getAscenseursParClient(int clientId) async {
     final response = await http.get(
-      Uri.parse('http://192.168.1.27:8080/api/utilisateurs/clients'),
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': 'Bearer $token',
-      },
+      Uri.parse('$baseUrl/client/$clientId'),
+      headers: await _headers(),
     );
 
     if (response.statusCode == 200) {
       final jsonResponse = jsonDecode(response.body);
       final List<dynamic> dataList = jsonResponse['data'] ?? jsonResponse;
-      return dataList.map((json) => UtilisateurModel.fromJson(json)).toList();
+      return dataList.map((json) => AscenseurModel.fromJson(json)).toList();
     } else {
-      throw Exception('Erreur: ${response.statusCode}');
+      throw Exception('Erreur: ${response.statusCode} - ${response.body}');
     }
   }
 
-  Future<List<SiteModel>> getSitesByClient(int clientId) async {
-    final token = await _getToken();
-    if (token == null) throw Exception("Token manquant");
-
+  /// GET /api/ascenseurs/site/{siteId}
+  Future<List<AscenseurModel>> getAscenseursParSite(int siteId) async {
     final response = await http.get(
-      Uri.parse('http://192.168.1.27:8080/api/sites/client/$clientId'),
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': 'Bearer $token',
-      },
+      Uri.parse('$baseUrl/site/$siteId'),
+      headers: await _headers(),
     );
 
     if (response.statusCode == 200) {
       final jsonResponse = jsonDecode(response.body);
       final List<dynamic> dataList = jsonResponse['data'] ?? jsonResponse;
-      return dataList.map((json) => SiteModel.fromJson(json)).toList();
+      return dataList.map((json) => AscenseurModel.fromJson(json)).toList();
     } else {
-      throw Exception('Erreur: ${response.statusCode}');
+      throw Exception('Erreur: ${response.statusCode} - ${response.body}');
     }
   }
 
+  /// POST /api/ascenseurs
   Future<AscenseurModel> createAscenseur(Map<String, dynamic> dto) async {
-    final token = await _getToken();
-    if (token == null) throw Exception("Token manquant");
-
     final response = await http.post(
       Uri.parse(baseUrl),
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': 'Bearer $token',
-      },
+      headers: await _headers(),
       body: jsonEncode(dto),
     );
 
@@ -97,16 +129,11 @@ class AscenseurService {
     }
   }
 
+  /// PUT /api/ascenseurs/{id}
   Future<AscenseurModel> updateAscenseur(int id, Map<String, dynamic> dto) async {
-    final token = await _getToken();
-    if (token == null) throw Exception("Token manquant");
-
     final response = await http.put(
       Uri.parse('$baseUrl/$id'),
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': 'Bearer $token',
-      },
+      headers: await _headers(),
       body: jsonEncode(dto),
     );
 
@@ -118,20 +145,53 @@ class AscenseurService {
     }
   }
 
+  /// DELETE /api/ascenseurs/{id}
   Future<void> deleteAscenseur(int id) async {
-  final token = await _getToken();
-  if (token == null) throw Exception("Token manquant");
+    final response = await http.delete(
+      Uri.parse('$baseUrl/$id'),
+      headers: {
+        'Authorization': 'Bearer ${await _getToken()}',
+      },
+    );
 
-  final response = await http.delete(
-    Uri.parse('$baseUrl/$id'),
-    headers: {
-      'Authorization': 'Bearer $token',
-    },
-  );
-
-  if (response.statusCode != 200 && response.statusCode != 204) {
-    throw Exception('Erreur lors de la suppression: ${response.statusCode}');
+    if (response.statusCode != 200 && response.statusCode != 204) {
+      throw Exception('Erreur lors de la suppression: ${response.statusCode}');
+    }
   }
-}
 
+  // ═══════════════════════════════════════════════════════════
+  // 🔹 MÉTHODES LIÉES (clients & sites)
+  // ═══════════════════════════════════════════════════════════
+
+  /// GET /api/utilisateurs/clients
+  Future<List<UtilisateurModel>> getClients() async {
+    final response = await http.get(
+      Uri.parse('http://192.168.1.27:8080/api/utilisateurs/clients'),
+      headers: await _headers(),
+    );
+
+    if (response.statusCode == 200) {
+      final jsonResponse = jsonDecode(response.body);
+      final List<dynamic> dataList = jsonResponse['data'] ?? jsonResponse;
+      return dataList.map((json) => UtilisateurModel.fromJson(json)).toList();
+    } else {
+      throw Exception('Erreur: ${response.statusCode}');
+    }
+  }
+
+  /// GET /api/sites/client/{clientId}
+  Future<List<SiteModel>> getSitesByClient(int clientId) async {
+    final response = await http.get(
+      Uri.parse('http://192.168.1.27:8080/api/sites/client/$clientId'),
+      headers: await _headers(),
+    );
+
+    if (response.statusCode == 200) {
+      final jsonResponse = jsonDecode(response.body);
+      final List<dynamic> dataList = jsonResponse['data'] ?? jsonResponse;
+      return dataList.map((json) => SiteModel.fromJson(json)).toList();
+    } else {
+      throw Exception('Erreur: ${response.statusCode}');
+    }
+  }
 }

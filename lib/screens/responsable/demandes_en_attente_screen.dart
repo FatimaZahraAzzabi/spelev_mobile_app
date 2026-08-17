@@ -122,7 +122,7 @@ class _DemandesEnAttenteScreenState extends State<DemandesEnAttenteScreen> {
                             Row(
                               mainAxisAlignment: MainAxisAlignment.spaceBetween,
                               children: [
-                                Text(d.ascenseurNom, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                                Text(d.ascenseurNom ?? 'Ascenseur #${d.ascenseurId}', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
                                 Container(
                                   padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                                   decoration: BoxDecoration(color: _getPrioriteColor(d.priorite).withOpacity(0.1), borderRadius: BorderRadius.circular(4)),
@@ -131,7 +131,7 @@ class _DemandesEnAttenteScreenState extends State<DemandesEnAttenteScreen> {
                               ],
                             ),
                             const SizedBox(height: 8),
-                            Text('Client: ${d.clientNom}', style: const TextStyle(color: Colors.black54)),
+                           Text('Client: ${d.clientNomComplet}', style: const TextStyle(color: Colors.black54)),
                             const SizedBox(height: 8),
                             Text(d.description, style: const TextStyle(color: Colors.black87)),
                             const Divider(height: 24),

@@ -1,69 +1,103 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
-import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import '../config/api_config.dart';
 import '../models/demande_maintenance_model.dart';
+import 'api_helper.dart';
 
 class DemandeMaintenanceService {
-  final String baseUrl = "http://192.168.1.27:8080/api/demandes-maintenance";
-  final _storage = const FlutterSecureStorage();
+  // ─── Côté CLIENT ────────────────────────────────────────
 
-  Future<String?> _getToken() async => await _storage.read(key: 'jwt_token');
+  /// GET /api/demandes-maintenance/mes-demandes
+  Future<List<DemandeMaintenanceModel>> getMesDemandes() async {
+    final res = await http.get(
+      Uri.parse('${ApiConfig.baseUrl}/api/demandes-maintenance/mes-demandes'),
+      headers: await ApiHelper.headers(),
+    );
+    ApiHelper.checkStatus(res);
+    final data = ApiHelper.unwrap(res.body);
+    return (data as List).map((e) => DemandeMaintenanceModel.fromJson(e)).toList();
+  }
 
-  // --- Côté Client ---
+  /// GET /api/demandes-maintenance/{id}
+  Future<DemandeMaintenanceModel> getDetail(int id) async {
+    final res = await http.get(
+      Uri.parse('${ApiConfig.baseUrl}/api/demandes-maintenance/$id'),
+      headers: await ApiHelper.headers(),
+    );
+    ApiHelper.checkStatus(res);
+    return DemandeMaintenanceModel.fromJson(ApiHelper.unwrap(res.body));
+  }
+
+  /// POST /api/demandes-maintenance
   Future<DemandeMaintenanceModel> creerDemande(Map<String, dynamic> dto) async {
-    final token = await _getToken();
-    final response = await http.post(
-      Uri.parse(baseUrl),
-      headers: {'Content-Type': 'application/json', 'Authorization': 'Bearer $token'},
+    final res = await http.post(
+      Uri.parse('${ApiConfig.baseUrl}/api/demandes-maintenance'),
+      headers: await ApiHelper.headers(),
       body: jsonEncode(dto),
     );
-    if (response.statusCode == 201) {
-      final json = jsonDecode(response.body);
-      return DemandeMaintenanceModel.fromJson(json['data'] ?? json);
-    }
-    throw Exception('Erreur création demande: ${response.body}');
+    ApiHelper.checkStatus(res);
+    return DemandeMaintenanceModel.fromJson(ApiHelper.unwrap(res.body));
   }
 
-  Future<List<DemandeMaintenanceModel>> getMesDemandes() async {
-    final token = await _getToken();
-    final response = await http.get(
-      Uri.parse('$baseUrl/mes-demandes'),
-      headers: {'Authorization': 'Bearer $token'},
+  /// PATCH /api/demandes-maintenance/{id}/annuler
+  Future<void> annuler(int id) async {
+    final res = await http.patch(
+      Uri.parse('${ApiConfig.baseUrl}/api/demandes-maintenance/$id/annuler'),
+      headers: await ApiHelper.headers(),
     );
-    if (response.statusCode == 200) {
-      final json = jsonDecode(response.body);
-      final List<dynamic> data = json['data'] ?? json;
-      return data.map((e) => DemandeMaintenanceModel.fromJson(e)).toList();
-    }
-    throw Exception('Erreur chargement demandes: ${response.statusCode}');
+    ApiHelper.checkStatus(res);
   }
 
-  // --- Côté Responsable ---
+  // ─── Côté RESPONSABLE MAINTENANCE ───────────────────────
+
+  /// GET /api/demandes-maintenance/en-attente
   Future<List<DemandeMaintenanceModel>> getDemandesEnAttente() async {
-    final token = await _getToken();
-    final response = await http.get(
-      Uri.parse('$baseUrl/en-attente'),
-      headers: {'Authorization': 'Bearer $token'},
+    final res = await http.get(
+      Uri.parse('${ApiConfig.baseUrl}/api/demandes-maintenance/en-attente'),
+      headers: await ApiHelper.headers(),
     );
-    if (response.statusCode == 200) {
-      final json = jsonDecode(response.body);
-      final List<dynamic> data = json['data'] ?? json;
-      return data.map((e) => DemandeMaintenanceModel.fromJson(e)).toList();
-    }
-    throw Exception('Erreur chargement demandes en attente: ${response.statusCode}');
+    ApiHelper.checkStatus(res);
+    final data = ApiHelper.unwrap(res.body);
+    return (data as List).map((e) => DemandeMaintenanceModel.fromJson(e)).toList();
   }
 
+  /// GET /api/demandes-maintenance/toutes?statut=EN_ATTENTE
+  Future<List<DemandeMaintenanceModel>> getToutesDemandes({String? statut}) async {
+    final uri = Uri.parse('${ApiConfig.baseUrl}/api/demandes-maintenance/toutes')
+        .replace(queryParameters: statut != null ? {'statut': statut} : null);
+    final res = await http.get(uri, headers: await ApiHelper.headers());
+    ApiHelper.checkStatus(res);
+    final data = ApiHelper.unwrap(res.body);
+    return (data as List).map((e) => DemandeMaintenanceModel.fromJson(e)).toList();
+  }
+
+  Future<DemandeMaintenanceModel> getDetailPourResponsable(int id) async {
+    final res = await http.get(
+      Uri.parse('${ApiConfig.baseUrl}/api/demandes-maintenance/gestion/$id'),
+      headers: await ApiHelper.headers(),
+    );
+    ApiHelper.checkStatus(res);
+    return DemandeMaintenanceModel.fromJson(ApiHelper.unwrap(res.body));
+  }
+
+  
   Future<DemandeMaintenanceModel> rejeterDemande(int id, String motif) async {
-    final token = await _getToken();
-    final response = await http.patch(
-      Uri.parse('$baseUrl/$id/rejeter'),
-      headers: {'Content-Type': 'application/json', 'Authorization': 'Bearer $token'},
+    final res = await http.patch(
+      Uri.parse('${ApiConfig.baseUrl}/api/demandes-maintenance/$id/rejeter'),
+      headers: await ApiHelper.headers(),
       body: jsonEncode({'motif': motif}),
     );
-    if (response.statusCode == 200) {
-      final json = jsonDecode(response.body);
-      return DemandeMaintenanceModel.fromJson(json['data'] ?? json);
-    }
-    throw Exception('Erreur rejet demande: ${response.body}');
+    ApiHelper.checkStatus(res);
+    return DemandeMaintenanceModel.fromJson(ApiHelper.unwrap(res.body));
+  }
+
+  /// GET /api/demandes-maintenance/{id}/generer-description-ia
+  Future<String> genererDescriptionIa(int id) async {
+    final res = await http.get(
+      Uri.parse('${ApiConfig.baseUrl}/api/demandes-maintenance/$id/generer-description-ia'),
+      headers: await ApiHelper.headers(),
+    );
+    ApiHelper.checkStatus(res);
+    return ApiHelper.unwrap(res.body) as String;
   }
 }
