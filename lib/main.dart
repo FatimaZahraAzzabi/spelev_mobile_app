@@ -36,6 +36,7 @@ import 'screens/client/client_demandes_screen.dart';
 import 'screens/client/client_profil_screen.dart';
 import 'screens/client/demande_detail_screen.dart';
 import 'screens/client/nouvelle_evaluation_screen.dart';
+import 'screens/client/mes_evaluations_screen.dart';
 
 void main() => runApp(const SpelevApp());
 
@@ -81,6 +82,9 @@ class SpelevApp extends StatelessWidget {
         '/responsable-parc-list': (context) => const ParcListScreen(),
         '/responsable-nouveau-parc': (context) => const NouveauParcScreen(),
         '/responsable-demandes-attente': (context) => const DemandesEnAttenteScreen(), 
+
+        '/client-nouvelle-evaluation': (context) => const NouvelleEvaluationScreen(),
+        '/client-mes-evaluations': (context) => const MesEvaluationsScreen(),
       },
       onGenerateRoute: (settings) {
         // Gestion de la route avec paramètre pour le détail d'une demande

@@ -1,25 +1,49 @@
 class ProfilModel {
   final int? id;
-  final String? prenom;
-  final String? nom;
   final String? email;
+  final String? nom;
+  final String? prenom;
+  final String? role;
   final String? telephone;
-  final String? entreprise;
+  final String? nomEntreprise;
   final String? adresse;
+  final bool? actif;
+  final String? photoUrl;
+  final DateTime? createdAt;
 
-  const ProfilModel({this.id, this.prenom, this.nom, this.email, this.telephone, this.entreprise, this.adresse});
+  String get nomComplet => '${prenom ?? ''} ${nom ?? ''}'.trim();
+  
+  String? get entreprise => nomEntreprise;
+
+  ProfilModel({
+    this.id,
+    this.email,
+    this.nom,
+    this.prenom,
+    this.role,
+    this.telephone,
+    this.nomEntreprise,
+    this.adresse,
+    this.actif,
+    this.photoUrl,
+    this.createdAt,
+  });
 
   factory ProfilModel.fromJson(Map<String, dynamic> json) {
     return ProfilModel(
       id: json['id'],
-      prenom: json['prenom'],
-      nom: json['nom'],
       email: json['email'],
+      nom: json['nom'],
+      prenom: json['prenom'],
+      role: json['role'],
       telephone: json['telephone'],
-      entreprise: json['entreprise'] ?? json['nomEntreprise'] ?? json['societe'],
+      nomEntreprise: json['nomEntreprise'],
       adresse: json['adresse'],
+      actif: json['actif'],
+      photoUrl: json['photoUrl'],
+      createdAt: json['createdAt'] != null
+          ? DateTime.tryParse(json['createdAt'].toString())
+          : null,
     );
   }
-
-  String get nomComplet => '${prenom ?? ''} ${nom ?? ''}'.trim();
 }

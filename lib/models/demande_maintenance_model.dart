@@ -10,6 +10,8 @@ class DemandeMaintenanceModel {
   final String? motifRejet;
   final int ascenseurId;
   final String? ascenseurNom;
+  final String? villeSaisie;
+  final String? adresseSaisie;
   
   final int? clientId;
   final String? clientNom;
@@ -25,6 +27,8 @@ class DemandeMaintenanceModel {
     required this.typeDemande,
     required this.priorite,
     required this.statut,
+    this.villeSaisie, 
+    this.adresseSaisie,
     required this.description,
     this.dateSouhaitee,
     this.motifRejet,
@@ -74,6 +78,7 @@ class DemandeMaintenanceModel {
     String? clientPrenom = json['clientPrenom'];
     String? clientEmail = json['clientEmail'];
     String? clientNomEntreprise = json['clientNomEntreprise'];
+    
 
     if (json['client'] is Map) {
       final client = json['client'] as Map<String, dynamic>;
@@ -92,6 +97,8 @@ class DemandeMaintenanceModel {
       description: json['description'] ?? '',
       dateSouhaitee: json['dateSouhaitee'],
       motifRejet: json['motifRejet'],
+      villeSaisie: json['villeSaisie'],
+      adresseSaisie: json['adresseSaisie'],
       ascenseurId: ascId,
       ascenseurNom: ascNom,
       clientId: clientId,
