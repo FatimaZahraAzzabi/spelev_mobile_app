@@ -20,7 +20,12 @@ import 'screens/responsable/nouveau_site_screen.dart';
 import 'screens/responsable/mes_taches_screen.dart';
 import 'screens/responsable/parc_list_screen.dart';
 import 'screens/responsable/nouveau_parc_screen.dart';
-import 'screens/responsable/demandes_en_attente_screen.dart';
+import 'screens/responsable/responsable_profil_screen.dart';
+import 'screens/responsable/edit_responsable_profil_screen.dart'; 
+import 'screens/responsable/responsable_demandes_en_attente_screen.dart'; 
+import 'screens/responsable/responsable_demande_detail_screen.dart';
+import 'screens/responsable/bon_travail_list_screen.dart';
+import 'screens/responsable/nouveau_bon_travail_screen.dart';
 
 // Écrans Technicien
 import 'screens/technicien/technicien_dashboard_screen.dart';
@@ -53,26 +58,27 @@ class SpelevApp extends StatelessWidget {
       routes: {
         '/login': (context) => const LoginScreen(),
         
-        // Routes Admin
+        // ─── Routes Admin ─────────────────────────────────────
         '/admin-dashboard': (context) => const AdminDashboardScreen(),
         '/admin-users': (context) => const AdminUserListScreen(),
         '/admin-user-form': (context) => const AdminUserFormScreen(),
         '/admin-taches': (context) => const AdminTachesScreen(),
         
-        // Routes Technicien
+        // ─── Routes Technicien ────────────────────────────────
         '/technicien-dashboard': (context) => const TechnicienDashboardScreen(),
         '/technicien-taches': (context) => const TechnicienTachesScreen(),
         '/technicien-interventions': (context) => const TechnicienInterventionsListScreen(), 
         
-        // Routes Client
+        // ─── Routes Client ────────────────────────────────────
         '/client-dashboard': (context) => const ClientDashboardScreen(),
         '/client-ascenseurs': (context) => const ClientAscenseursScreen(),
         '/client-demandes': (context) => const ClientDemandesScreen(),
         '/client-profil': (context) => const ClientProfilScreen(),
         '/client-nouvelle-demande': (context) => const NouvelleDemandeScreen(),
         '/client-nouvelle-evaluation': (context) => const NouvelleEvaluationScreen(),
+        '/client-mes-evaluations': (context) => const MesEvaluationsScreen(),
         
-        // Routes Responsable
+        // ─── Routes Responsable ───────────────────────────────
         '/responsable-dashboard': (context) => const ResponsableDashboardScreen(),
         '/responsable-ascenseur-list': (context) => const AscenseurListScreen(),
         '/responsable-nouvel-ascenseur': (context) => const NouvelAscenseurScreen(),
@@ -81,20 +87,32 @@ class SpelevApp extends StatelessWidget {
         '/responsable-mes-taches': (context) => const MesTachesScreen(),
         '/responsable-parc-list': (context) => const ParcListScreen(),
         '/responsable-nouveau-parc': (context) => const NouveauParcScreen(),
-        '/responsable-demandes-attente': (context) => const DemandesEnAttenteScreen(), 
+        '/responsable-profil': (context) => const ResponsableProfilScreen(),
+        '/responsable-bons-travail': (context) => const BonTravailListScreen(),
+         '/responsable-nouveau-bon-travail': (context) => const NouveauBonTravailScreen(),
+        
+        '/responsable-demandes-attente': (context) => const ResponsableDemandesEnAttenteScreen(),
 
-        '/client-nouvelle-evaluation': (context) => const NouvelleEvaluationScreen(),
-        '/client-mes-evaluations': (context) => const MesEvaluationsScreen(),
+      
       },
       onGenerateRoute: (settings) {
-        // Gestion de la route avec paramètre pour le détail d'une demande
         if (settings.name == '/client-demande-detail') {
           final demandeId = settings.arguments as int;
           return MaterialPageRoute(
             builder: (context) => DemandeDetailScreen(demandeId: demandeId),
           );
         }
-        return null;
+
+       
+        if (settings.name == '/responsable-demande-detail') {
+          return MaterialPageRoute(
+            builder: (context) => ResponsableDemandeDetailScreen(
+              demande: settings.arguments as dynamic, 
+            ),
+          );
+        }
+
+        return null; 
       },
     );
   }

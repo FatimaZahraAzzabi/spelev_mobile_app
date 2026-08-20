@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../services/bon_travail_service.dart';
 import '../../models/bon_travail_model.dart';
-import 'technicien_drawer.dart';
+import '../../theme/app_theme.dart';
 
 class TechnicienInterventionsListScreen extends StatefulWidget {
   const TechnicienInterventionsListScreen({super.key});
@@ -43,84 +43,130 @@ class _TechnicienInterventionsListScreenState extends State<TechnicienInterventi
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.grey[100],
-      drawer: const TechnicienDrawer(currentRoute: '/technicien-interventions'),
       appBar: AppBar(
         backgroundColor: Colors.white,
-        elevation: 0,
-        title: const Text('Mes Interventions', style: TextStyle(color: Colors.black87, fontWeight: FontWeight.bold)),
+        elevation: 2,
         iconTheme: const IconThemeData(color: Colors.black87),
+        title: const Text(
+          'Mes interventions',
+          style: TextStyle(color: Colors.black87, fontWeight: FontWeight.bold),
+        ),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.refresh, color: AppColors.orange),
+            onPressed: _loadInterventions,
+          ),
+        ],
       ),
       body: _isLoading
-          ? const Center(child: CircularProgressIndicator())
+          ? const Center(child: CircularProgressIndicator(color: AppColors.orange))
           : _interventions.isEmpty
-              ? const Center(child: Text('Aucune intervention assignée', style: TextStyle(color: Colors.grey)))
-              : ListView.builder(
-                  padding: const EdgeInsets.all(16),
-                  itemCount: _interventions.length,
-                  itemBuilder: (context, index) {
-                    final bt = _interventions[index];
-                    return Card(
-                      elevation: 2,
-                      margin: const EdgeInsets.only(bottom: 12),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                      child: Padding(
-                        padding: const EdgeInsets.all(16),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                              children: [
-                                Text(bt.ascenseurNom, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
-                                Container(
-                                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                                  decoration: BoxDecoration(
-                                    color: bt.statut == 'EN_COURS' ? Colors.orange[100] : Colors.blue[100],
-                                    borderRadius: BorderRadius.circular(4),
-                                  ),
-                                  child: Text(
-                                    bt.statut.replaceAll('_', ' '),
-                                    style: TextStyle(
-                                      color: bt.statut == 'EN_COURS' ? Colors.orange[800] : Colors.blue[800],
-                                      fontWeight: FontWeight.bold,
-                                      fontSize: 12,
+              ? Center(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(Icons.assignment_outlined, size: 64, color: Colors.grey[400]),
+                      const SizedBox(height: 16),
+                      Text(
+                        'Aucune intervention assignée',
+                        style: TextStyle(color: Colors.grey[600], fontSize: 16),
+                      ),
+                    ],
+                  ),
+                )
+              : RefreshIndicator(
+                  onRefresh: _loadInterventions,
+                  child: ListView.builder(
+                    padding: const EdgeInsets.all(16),
+                    itemCount: _interventions.length,
+                    itemBuilder: (context, index) {
+                      final bt = _interventions[index];
+                      return Card(
+                        elevation: 2,
+                        margin: const EdgeInsets.only(bottom: 12),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                        child: Padding(
+                          padding: const EdgeInsets.all(16),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Row(
+                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                children: [
+                                  Expanded(
+                                    child: Text(
+                                      bt.ascenseurNom ?? 'Ascenseur inconnu', 
+                                      style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: AppColors.navy),
                                     ),
                                   ),
+                                  Container(
+                                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                                    decoration: BoxDecoration(
+                                      color: bt.statutColor.withOpacity(0.15),
+                                      borderRadius: BorderRadius.circular(20),
+                                    ),
+                                    child: Text(
+                                      bt.statutLabel, 
+                                      style: TextStyle(
+                                        color: bt.statutColor,
+                                        fontWeight: FontWeight.bold,
+                                        fontSize: 11,
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              const SizedBox(height: 8),
+                              Row(
+                                children: [
+                                  Icon(Icons.calendar_today, size: 16, color: Colors.grey[600]),
+                                  const SizedBox(width: 6),
+                                  Text(
+                                    _formatDate(bt.dateInterventionPrevue),
+                                    style: TextStyle(color: Colors.grey[700], fontSize: 13),
+                                  ),
+                                ],
+                              ),
+                              const SizedBox(height: 8),
+                              Row(
+                                children: [
+                                  Icon(Icons.timer, size: 16, color: Colors.grey[600]),
+                                  const SizedBox(width: 6),
+                                  Text(
+                                    'Durée : ${bt.dureeEstimeeMinutes} min',
+                                    style: TextStyle(color: Colors.grey[700], fontSize: 13),
+                                  ),
+                                ],
+                              ),
+                              if (bt.siteAdresse != null) ...[
+                                const SizedBox(height: 8),
+                                Row(
+                                  children: [
+                                    Icon(Icons.location_on, size: 16, color: Colors.grey[600]),
+                                    const SizedBox(width: 6),
+                                    Expanded(
+                                      child: Text(
+                                        bt.siteAdresse!,
+                                        style: TextStyle(color: Colors.grey[700], fontSize: 13),
+                                        maxLines: 1,
+                                        overflow: TextOverflow.ellipsis,
+                                      ),
+                                    ),
+                                  ],
                                 ),
                               ],
-                            ),
-                            const SizedBox(height: 8),
-                            Text('Site: ${bt.siteAdresse ?? "Non défini"}', style: const TextStyle(color: Colors.black54)),
-                            const SizedBox(height: 16),
-                            SizedBox(
-                              width: double.infinity,
-                              child: ElevatedButton.icon(
-                                onPressed: () {
-                                  // Navigation vers la checklist avec les arguments
-                                  Navigator.pushNamed(
-                                    context,
-                                    '/technicien-checklist',
-                                    arguments: {
-                                      'bonTravailId': bt.id,
-                                      'ascenseurNom': bt.ascenseurNom,
-                                    },
-                                  ).then((_) => _loadInterventions()); // Recharge la liste au retour
-                                },
-                                icon: const Icon(Icons.assignment_turned_in, size: 20),
-                                label: const Text('Voir la checklist'),
-                                style: ElevatedButton.styleFrom(
-                                  backgroundColor: Colors.blue[900],
-                                  foregroundColor: Colors.white,
-                                  padding: const EdgeInsets.symmetric(vertical: 12),
-                                ),
-                              ),
-                            ),
-                          ],
+                            ],
+                          ),
                         ),
-                      ),
-                    );
-                  },
+                      );
+                    },
+                  ),
                 ),
     );
+  }
+
+  String _formatDate(DateTime date) {
+    final months = ['Jan', 'Fév', 'Mar', 'Avr', 'Mai', 'Jun', 'Jul', 'Aoû', 'Sep', 'Oct', 'Nov', 'Déc'];
+    return '${date.day} ${months[date.month - 1]} ${date.year} à ${date.hour.toString().padLeft(2, '0')}:${date.minute.toString().padLeft(2, '0')}';
   }
 }

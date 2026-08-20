@@ -1,12 +1,18 @@
+import 'package:flutter/material.dart';
+import 'piece_jointe_model.dart';
+
+enum StatutBonTravail { PLANIFIE, EN_COURS, TERMINE, ANNULE }
+enum PrioriteDemande { CRITIQUE, URGENTE, NORMALE, FAIBLE }
+
 class BonTravailModel {
   final int id;
-  final String statut;
-  final String priorite;
-  final String dateInterventionPrevue;
+  final StatutBonTravail statut;
+  final PrioriteDemande priorite;
+  final DateTime dateInterventionPrevue;
   final int dureeEstimeeMinutes;
-  final String? description;
-  final String? dateDebutReelle;
-  final String? dateFinReelle;
+  final String description;
+  final DateTime? dateDebutReelle;
+  final DateTime? dateFinReelle;
   final String? diagnostic;
   final String? causeIdentifiee;
   final String? actionRealisee;
@@ -14,24 +20,25 @@ class BonTravailModel {
   final bool? essaiConcluant;
   final String? recommandations;
   final int? demandeMaintenanceId;
-  final int ascenseurId;
-  final String ascenseurNom;
+  final int? ascenseurId;
+  final String? ascenseurNom;
   final String? siteAdresse;
   final int? parcId;
   final String? parcNom;
-  final int technicienResponsableId;
-  final String technicienResponsableNom;
-  final List<dynamic> techniciens;
-  final List<dynamic> photosDemande;
-  final List<dynamic> piecesJointesBonTravail;
+  final int? technicienResponsableId;
+  final String? technicienResponsableNom;
+  final List<Map<String, dynamic>> techniciens;
+  final List<PieceJointeModel> photosDemande;
+  final List<PieceJointeModel> piecesJointesBonTravail;
+  final String? createdAt;
 
-  BonTravailModel({
+  const BonTravailModel({
     required this.id,
     required this.statut,
     required this.priorite,
     required this.dateInterventionPrevue,
     required this.dureeEstimeeMinutes,
-    this.description,
+    required this.description,
     this.dateDebutReelle,
     this.dateFinReelle,
     this.diagnostic,
@@ -41,45 +48,80 @@ class BonTravailModel {
     this.essaiConcluant,
     this.recommandations,
     this.demandeMaintenanceId,
-    required this.ascenseurId,
-    required this.ascenseurNom,
+    this.ascenseurId,
+    this.ascenseurNom,
     this.siteAdresse,
     this.parcId,
     this.parcNom,
-    required this.technicienResponsableId,
-    required this.technicienResponsableNom,
+    this.technicienResponsableId,
+    this.technicienResponsableNom,
     this.techniciens = const [],
     this.photosDemande = const [],
     this.piecesJointesBonTravail = const [],
+    this.createdAt,
   });
 
   factory BonTravailModel.fromJson(Map<String, dynamic> json) {
-    return BonTravailModel(
-      id: json['id'],
-      statut: json['statut'] ?? '',
-      priorite: json['priorite'] ?? '',
-      dateInterventionPrevue: json['dateInterventionPrevue'] ?? '',
-      dureeEstimeeMinutes: json['dureeEstimeeMinutes'] ?? 0,
-      description: json['description'],
-      dateDebutReelle: json['dateDebutReelle'],
-      dateFinReelle: json['dateFinReelle'],
-      diagnostic: json['diagnostic'],
-      causeIdentifiee: json['causeIdentifiee'],
-      actionRealisee: json['actionRealisee'],
-      piecesRemplacees: json['piecesRemplacees'],
-      essaiConcluant: json['essaiConcluant'],
-      recommandations: json['recommandations'],
-      demandeMaintenanceId: json['demandeMaintenanceId'],
-      ascenseurId: json['ascenseurId'],
-      ascenseurNom: json['ascenseurNom'] ?? '',
-      siteAdresse: json['siteAdresse'],
-      parcId: json['parcId'],
-      parcNom: json['parcNom'],
-      technicienResponsableId: json['technicienResponsableId'],
-      technicienResponsableNom: json['technicienResponsableNom'] ?? '',
-      techniciens: json['techniciens'] ?? [],
-      photosDemande: json['photosDemande'] ?? [],
-      piecesJointesBonTravail: json['piecesJointesBonTravail'] ?? [],
-    );
+  // Debug print
+  print('📥 Parsing BT #${json['id']}');
+  print('   duree: ${json['dureeEstimeeMinutes']} (type: ${json['dureeEstimeeMinutes'].runtimeType})');
+  print('   desc: "${json['description']}" (type: ${json['description'].runtimeType})');
+
+  return BonTravailModel(
+    id: json['id']?.toInt() ?? 0,
+    statut: StatutBonTravail.values.firstWhere(
+      (e) => e.name == json['statut'],
+      orElse: () => StatutBonTravail.PLANIFIE,
+    ),
+    priorite: PrioriteDemande.values.firstWhere(
+      (e) => e.name == json['priorite'],
+      orElse: () => PrioriteDemande.NORMALE,
+    ),
+    dateInterventionPrevue: DateTime.parse(json['dateInterventionPrevue'].toString()),
+    
+    dureeEstimeeMinutes: (json['dureeEstimeeMinutes'] is int) 
+        ? json['dureeEstimeeMinutes'] 
+        : (json['dureeEstimeeMinutes'] is String ? int.tryParse(json['dureeEstimeeMinutes']) ?? 0 : 0),
+    
+    description: json['description']?.toString() ?? '',
+    
+    dateDebutReelle: json['dateDebutReelle'] != null ? DateTime.parse(json['dateDebutReelle']) : null,
+    dateFinReelle: json['dateFinReelle'] != null ? DateTime.parse(json['dateFinReelle']) : null,
+    diagnostic: json['diagnostic']?.toString(),
+    causeIdentifiee: json['causeIdentifiee']?.toString(),
+    actionRealisee: json['actionRealisee']?.toString(),
+    piecesRemplacees: json['piecesRemplacees']?.toString(),
+    essaiConcluant: json['essaiConcluant'] as bool?,
+    recommandations: json['recommandations']?.toString(),
+    demandeMaintenanceId: json['demandeMaintenanceId']?.toInt(),
+    ascenseurId: json['ascenseurId']?.toInt(),
+    ascenseurNom: json['ascenseurNom']?.toString(),
+    siteAdresse: json['siteAdresse']?.toString(),
+    parcId: json['parcId']?.toInt(),
+    parcNom: json['parcNom']?.toString(),
+    technicienResponsableId: json['technicienResponsableId']?.toInt(),
+    technicienResponsableNom: json['technicienResponsableNom']?.toString(),
+    techniciens: (json['techniciens'] as List?)?.cast<Map<String, dynamic>>() ?? [],
+    photosDemande: (json['photosDemande'] as List?)?.map((p) => PieceJointeModel.fromJson(p)).toList() ?? [],
+    piecesJointesBonTravail: (json['piecesJointesBonTravail'] as List?)?.map((p) => PieceJointeModel.fromJson(p)).toList() ?? [],
+    createdAt: json['createdAt']?.toString(),
+  );
+}
+  String get statutLabel {
+    switch (statut) {
+      case StatutBonTravail.PLANIFIE: return 'Planifié';
+      case StatutBonTravail.EN_COURS: return 'En cours';
+      case StatutBonTravail.TERMINE: return 'Terminé';
+      case StatutBonTravail.ANNULE: return 'Annulé';
+    }
+  }
+
+  Color get statutColor {
+    switch (statut) {
+      case StatutBonTravail.PLANIFIE: return Colors.blue;
+      case StatutBonTravail.EN_COURS: return Colors.orange;
+      case StatutBonTravail.TERMINE: return Colors.green;
+      case StatutBonTravail.ANNULE: return Colors.grey;
+    }
   }
 }

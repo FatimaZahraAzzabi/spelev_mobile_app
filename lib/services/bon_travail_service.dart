@@ -1,82 +1,92 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
-import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import '../config/api_config.dart';
 import '../models/bon_travail_model.dart';
+import '../models/bon_travail_create_model.dart';
+import 'api_helper.dart';
 
 class BonTravailService {
-  final String baseUrl = "http://192.168.1.27:8080/api/bons-travail";
-  final _storage = const FlutterSecureStorage();
-
-  Future<String?> _getToken() async => await _storage.read(key: 'jwt_token');
-
-  // --- Côté Responsable ---
-  Future<BonTravailModel> creerBonTravail(Map<String, dynamic> dto) async {
-    final token = await _getToken();
-    final response = await http.post(
-      Uri.parse(baseUrl),
-      headers: {'Content-Type': 'application/json', 'Authorization': 'Bearer $token'},
-      body: jsonEncode(dto),
+  Future<List<BonTravailModel>> lister() async {
+    final res = await http.get(
+      Uri.parse('${ApiConfig.baseUrl}/api/bons-travail'),
+      headers: await ApiHelper.headers(),
     );
-    if (response.statusCode == 201) {
-      final json = jsonDecode(response.body);
-      return BonTravailModel.fromJson(json['data'] ?? json);
-    }
-    throw Exception('Erreur création bon de travail: ${response.body}');
+    ApiHelper.checkStatus(res);
+    final data = ApiHelper.unwrap(res.body);
+    return (data as List).map((e) => BonTravailModel.fromJson(e)).toList();
   }
 
-  Future<List<BonTravailModel>> listerBonsTravail() async {
-    final token = await _getToken();
-    final response = await http.get(
-      Uri.parse(baseUrl),
-      headers: {'Authorization': 'Bearer $token'},
-    );
-    if (response.statusCode == 200) {
-      final json = jsonDecode(response.body);
-      final List<dynamic> data = json['data'] ?? json;
-      return data.map((e) => BonTravailModel.fromJson(e)).toList();
-    }
-    throw Exception('Erreur chargement bons de travail: ${response.statusCode}');
-  }
-
-  // --- Côté Technicien ---
   Future<List<BonTravailModel>> getMesInterventions() async {
-    final token = await _getToken();
-    final response = await http.get(
-      Uri.parse('$baseUrl/mes-interventions'),
-      headers: {'Authorization': 'Bearer $token'},
+    final res = await http.get(
+      Uri.parse('${ApiConfig.baseUrl}/api/bons-travail/mes-interventions'),
+      headers: await ApiHelper.headers(),
     );
-    if (response.statusCode == 200) {
-      final json = jsonDecode(response.body);
-      final List<dynamic> data = json['data'] ?? json;
-      return data.map((e) => BonTravailModel.fromJson(e)).toList();
-    }
-    throw Exception('Erreur chargement mes interventions: ${response.statusCode}');
+    ApiHelper.checkStatus(res);
+    final data = ApiHelper.unwrap(res.body);
+    return (data as List).map((e) => BonTravailModel.fromJson(e)).toList();
   }
 
-  Future<BonTravailModel> demarrerIntervention(int id) async {
-    final token = await _getToken();
-    final response = await http.patch(
-      Uri.parse('$baseUrl/$id/demarrer'),
-      headers: {'Authorization': 'Bearer $token'},
+  Future<BonTravailModel> getDetail(int id) async {
+    final res = await http.get(
+      Uri.parse('${ApiConfig.baseUrl}/api/bons-travail/$id'),
+      headers: await ApiHelper.headers(),
     );
-    if (response.statusCode == 200) {
-      final json = jsonDecode(response.body);
-      return BonTravailModel.fromJson(json['data'] ?? json);
-    }
-    throw Exception('Erreur démarrage: ${response.body}');
+    ApiHelper.checkStatus(res);
+    return BonTravailModel.fromJson(ApiHelper.unwrap(res.body));
   }
 
-  Future<BonTravailModel> terminerIntervention(int id, Map<String, dynamic> dto) async {
-    final token = await _getToken();
-    final response = await http.patch(
-      Uri.parse('$baseUrl/$id/terminer'),
-      headers: {'Content-Type': 'application/json', 'Authorization': 'Bearer $token'},
-      body: jsonEncode(dto),
+  Future<BonTravailModel> creer(BonTravailCreateModel dto) async {
+    final res = await http.post(
+      Uri.parse('${ApiConfig.baseUrl}/api/bons-travail'),
+      headers: await ApiHelper.headers(),
+      body: jsonEncode(dto.toJson()),
     );
-    if (response.statusCode == 200) {
-      final json = jsonDecode(response.body);
-      return BonTravailModel.fromJson(json['data'] ?? json);
-    }
-    throw Exception('Erreur clôture: ${response.body}');
+    ApiHelper.checkStatus(res);
+    return BonTravailModel.fromJson(ApiHelper.unwrap(res.body));
+  }
+
+  Future<BonTravailModel> annuler(int id) async {
+    final res = await http.patch(
+      Uri.parse('${ApiConfig.baseUrl}/api/bons-travail/$id/annuler'),
+      headers: await ApiHelper.headers(),
+    );
+    ApiHelper.checkStatus(res);
+    return BonTravailModel.fromJson(ApiHelper.unwrap(res.body));
+  }
+
+  Future<List<Map<String, dynamic>>> verifierDisponibilite({
+    required List<int> technicienIds,
+    required DateTime debut,
+    required int dureeMinutes,
+  }) async {
+    final uri = Uri.parse('${ApiConfig.baseUrl}/api/bons-travail/verifier-disponibilite')
+        .replace(queryParameters: {
+      'technicienIds': technicienIds.join(','),
+      'debut': debut.toIso8601String(),
+      'dureeMinutes': dureeMinutes.toString(),
+    });
+
+    final res = await http.get(uri, headers: await ApiHelper.headers());
+    ApiHelper.checkStatus(res);
+    final data = ApiHelper.unwrap(res.body);
+    return List<Map<String, dynamic>>.from(data);
+  }
+
+  Future<List<Map<String, dynamic>>> getTechniciensDisponibles({
+    required int ascenseurId,
+    required DateTime debut,
+    required int dureeMinutes,
+  }) async {
+    final uri = Uri.parse('${ApiConfig.baseUrl}/api/bons-travail/techniciens-disponibles')
+        .replace(queryParameters: {
+      'ascenseurId': ascenseurId.toString(),
+      'debut': debut.toIso8601String(),
+      'dureeMinutes': dureeMinutes.toString(),
+    });
+
+    final res = await http.get(uri, headers: await ApiHelper.headers());
+    ApiHelper.checkStatus(res);
+    final data = ApiHelper.unwrap(res.body);
+    return List<Map<String, dynamic>>.from(data);
   }
 }

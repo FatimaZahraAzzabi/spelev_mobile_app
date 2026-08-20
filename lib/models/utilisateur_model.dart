@@ -2,17 +2,16 @@ class UtilisateurModel {
   final int id;
   final String email;
   final String telephone;
-  final String motDePasse; // Uniquement pour la création (jamais renvoyé par le backend)
+  final String motDePasse;
   final String nom;
   final String prenom;
-  final String nomEntreprise; // Présent dans le parent Utilisateur
+  final String nomEntreprise;
   final bool actif;
-  final String type; // "ADMINISTRATEUR", "TECHNICIEN", "CLIENT", "RESPONSABLE_MAINTENANCE"
-  
-  // Champs spécifiques aux enfants
-  final String? specialite;    // Technicien uniquement
-  final bool? disponible;      // Technicien uniquement
-  final String? adresse;       // Client uniquement
+  final String type;
+  final String? specialite;
+  final bool? disponible;
+  final String? adresse;
+  final List<int>? parcIds; 
 
   UtilisateurModel({
     required this.id,
@@ -27,6 +26,7 @@ class UtilisateurModel {
     this.specialite,
     this.disponible,
     this.adresse,
+    this.parcIds,
   });
 
   factory UtilisateurModel.fromJson(Map<String, dynamic> json) {
@@ -42,6 +42,7 @@ class UtilisateurModel {
       specialite: json['specialite'] as String?,
       disponible: json['disponible'] as bool?,
       adresse: json['adresse'] as String?,
+      parcIds: (json['parcIds'] as List?)?.map((e) => e as int).toList(),
     );
   }
 
@@ -58,6 +59,7 @@ class UtilisateurModel {
       'specialite': specialite,
       'disponible': disponible,
       'adresse': adresse,
+      'parcIds': parcIds,
     };
   }
 }
@@ -69,10 +71,11 @@ class UtilisateurCreateDTO {
   final String motDePasse;
   final String nom;
   final String prenom;
-  final String type; // "ADMINISTRATEUR", "TECHNICIEN", "CLIENT", "RESPONSABLE_MAINTENANCE"
+  final String type;
   final String? nomEntreprise;
   final String? specialite;
   final String? adresse;
+  final List<int>? parcIds;
 
   UtilisateurCreateDTO({
     required this.email,
@@ -84,6 +87,7 @@ class UtilisateurCreateDTO {
     this.nomEntreprise,
     this.specialite,
     this.adresse,
+    this.parcIds,
   });
 
   Map<String, dynamic> toMap() {
@@ -97,6 +101,7 @@ class UtilisateurCreateDTO {
       'nomEntreprise': nomEntreprise,
       'specialite': specialite,
       'adresse': adresse,
+      'parcIds': parcIds,
     };
   }
 }
@@ -112,6 +117,7 @@ class UtilisateurUpdateDTO {
   final String? nomEntreprise;
   final String? specialite;
   final String? adresse;
+  final List<int>? parcIds;
 
   UtilisateurUpdateDTO({
     required this.email,
@@ -123,6 +129,7 @@ class UtilisateurUpdateDTO {
     this.nomEntreprise,
     this.specialite,
     this.adresse,
+    this.parcIds,
   });
 
   Map<String, dynamic> toMap() {
@@ -136,6 +143,7 @@ class UtilisateurUpdateDTO {
       'nomEntreprise': nomEntreprise,
       'specialite': specialite,
       'adresse': adresse,
+      'parcIds': parcIds,
     };
   }
 }

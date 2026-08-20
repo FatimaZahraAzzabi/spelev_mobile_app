@@ -3,12 +3,10 @@ import 'package:http/http.dart' as http;
 import '../config/api_config.dart';
 import '../models/demande_maintenance_model.dart';
 import 'api_helper.dart';
-import '../config/api_config.dart';
 
 class DemandeMaintenanceService {
   // ─── Côté CLIENT ────────────────────────────────────────
 
-  /// GET /api/demandes-maintenance/mes-demandes
   Future<List<DemandeMaintenanceModel>> getMesDemandes() async {
     final res = await http.get(
       Uri.parse('${ApiConfig.baseUrl}/api/demandes-maintenance/mes-demandes'),
@@ -19,7 +17,6 @@ class DemandeMaintenanceService {
     return (data as List).map((e) => DemandeMaintenanceModel.fromJson(e)).toList();
   }
 
-  /// GET /api/demandes-maintenance/{id}
   Future<DemandeMaintenanceModel> getDetail(int id) async {
     final res = await http.get(
       Uri.parse('${ApiConfig.baseUrl}/api/demandes-maintenance/$id'),
@@ -29,7 +26,6 @@ class DemandeMaintenanceService {
     return DemandeMaintenanceModel.fromJson(ApiHelper.unwrap(res.body));
   }
 
-  /// POST /api/demandes-maintenance
   Future<DemandeMaintenanceModel> creerDemande(Map<String, dynamic> dto) async {
     final res = await http.post(
       Uri.parse('${ApiConfig.baseUrl}/api/demandes-maintenance'),
@@ -40,7 +36,6 @@ class DemandeMaintenanceService {
     return DemandeMaintenanceModel.fromJson(ApiHelper.unwrap(res.body));
   }
 
-  /// PATCH /api/demandes-maintenance/{id}/annuler
   Future<void> annuler(int id) async {
     final res = await http.patch(
       Uri.parse('${ApiConfig.baseUrl}/api/demandes-maintenance/$id/annuler'),
@@ -51,7 +46,6 @@ class DemandeMaintenanceService {
 
   // ─── Côté RESPONSABLE MAINTENANCE ───────────────────────
 
-  /// GET /api/demandes-maintenance/en-attente
   Future<List<DemandeMaintenanceModel>> getDemandesEnAttente() async {
     final res = await http.get(
       Uri.parse('${ApiConfig.baseUrl}/api/demandes-maintenance/en-attente'),
@@ -62,7 +56,6 @@ class DemandeMaintenanceService {
     return (data as List).map((e) => DemandeMaintenanceModel.fromJson(e)).toList();
   }
 
-  /// GET /api/demandes-maintenance/toutes?statut=EN_ATTENTE
   Future<List<DemandeMaintenanceModel>> getToutesDemandes({String? statut}) async {
     final uri = Uri.parse('${ApiConfig.baseUrl}/api/demandes-maintenance/toutes')
         .replace(queryParameters: statut != null ? {'statut': statut} : null);
@@ -81,7 +74,15 @@ class DemandeMaintenanceService {
     return DemandeMaintenanceModel.fromJson(ApiHelper.unwrap(res.body));
   }
 
-  
+  Future<DemandeMaintenanceModel> accepterDemande(int id) async {
+    final res = await http.patch(
+      Uri.parse('${ApiConfig.baseUrl}/api/demandes-maintenance/$id/accepter'),
+      headers: await ApiHelper.headers(),
+    );
+    ApiHelper.checkStatus(res);
+    return DemandeMaintenanceModel.fromJson(ApiHelper.unwrap(res.body));
+  }
+
   Future<DemandeMaintenanceModel> rejeterDemande(int id, String motif) async {
     final res = await http.patch(
       Uri.parse('${ApiConfig.baseUrl}/api/demandes-maintenance/$id/rejeter'),
@@ -92,8 +93,16 @@ class DemandeMaintenanceService {
     return DemandeMaintenanceModel.fromJson(ApiHelper.unwrap(res.body));
   }
 
-  /// GET /api/demandes-maintenance/{id}/generer-description-ia
-  Future<String> genererDescriptionIa(int id) async {
+  Future<String> genererDescriptionIa(int demandeId) async {
+    final res = await http.get(
+      Uri.parse('${ApiConfig.baseUrl}/api/demandes-maintenance/$demandeId/generer-description-ia'),
+      headers: await ApiHelper.headers(),
+    );
+    ApiHelper.checkStatus(res);
+    return ApiHelper.unwrap(res.body) as String;
+  }
+
+  Future<String> genererDescriptionIaOld(int id) async {
     final res = await http.get(
       Uri.parse('${ApiConfig.baseUrl}/api/demandes-maintenance/$id/generer-description-ia'),
       headers: await ApiHelper.headers(),
