@@ -24,7 +24,6 @@ class _AdminTachesScreenState extends State<AdminTachesScreen> with SingleTicker
     _tabController = TabController(length: 2, vsync: this);
     _loadTaches();
     
-    // Recharger la liste quand on revient sur l'onglet Liste après une création
     _tabController.addListener(() {
       if (_tabController.index == 0) {
         _loadTaches();
@@ -131,7 +130,6 @@ class _AdminTachesScreenState extends State<AdminTachesScreen> with SingleTicker
       body: TabBarView(
         controller: _tabController,
         children: [
-          // ONGLET 1 : LISTE DES TÂCHES
           _buildListeTab(),
           
           // ONGLET 2 : CRÉATION DE TÂCHE

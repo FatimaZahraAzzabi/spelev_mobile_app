@@ -3,6 +3,7 @@ import 'responsable_drawer.dart';
 import '../../theme/app_theme.dart';
 import '../../services/site_service.dart';
 import '../../models/site_model.dart';
+import 'site_detail_screen.dart'; 
 
 class SiteListScreen extends StatefulWidget {
   const SiteListScreen({super.key});
@@ -71,7 +72,6 @@ class _SiteListScreenState extends State<SiteListScreen> {
       ),
       body: Column(
         children: [
-          // Barre de recherche et bouton d'ajout
           Container(
             padding: const EdgeInsets.all(16),
             color: Colors.white,
@@ -96,8 +96,9 @@ class _SiteListScreenState extends State<SiteListScreen> {
                 ),
                 const SizedBox(width: 12),
                 ElevatedButton.icon(
-                  onPressed: () {
-                    Navigator.pushNamed(context, '/responsable-nouveau-site');
+                  onPressed: () async {
+                    await Navigator.pushNamed(context, '/responsable-nouveau-site');
+                    _loadSites(); 
                   },
                   icon: const Icon(Icons.add, size: 20),
                   label: const Text('Nouveau'),
@@ -113,55 +114,67 @@ class _SiteListScreenState extends State<SiteListScreen> {
           ),
           const Divider(height: 1),
 
-          // Liste des sites
           Expanded(
             child: _isLoading
                 ? const Center(child: CircularProgressIndicator(color: AppColors.orange))
                 : _filteredSites.isEmpty
-                    ? const Center(
-                        child: Text('Aucun site trouvé', style: TextStyle(color: Colors.grey)),
+                    ? Center(
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Icon(Icons.business_outlined, size: 64, color: Colors.grey[400]),
+                            const SizedBox(height: 16),
+                            Text('Aucun site trouvé', style: TextStyle(fontSize: 16, color: Colors.grey[600])),
+                          ],
+                        ),
                       )
-                    : ListView.builder(
-                        padding: const EdgeInsets.all(16),
-                        itemCount: _filteredSites.length,
-                        itemBuilder: (context, index) {
-                          final site = _filteredSites[index];
-                          return Card(
-                            elevation: 1,
-                            margin: const EdgeInsets.only(bottom: 12),
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                            child: ListTile(
-                              contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                              leading: CircleAvatar(
-                                backgroundColor: AppColors.navy.withOpacity(0.1),
-                                child: const Icon(Icons.business, color: AppColors.navy),
+                    : RefreshIndicator(
+                        onRefresh: _loadSites, 
+                        child: ListView.builder(
+                          padding: const EdgeInsets.all(16),
+                          itemCount: _filteredSites.length,
+                          itemBuilder: (context, index) {
+                            final site = _filteredSites[index];
+                            return Card(
+                              elevation: 1,
+                              margin: const EdgeInsets.only(bottom: 12),
+                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                              child: ListTile(
+                                contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                                leading: CircleAvatar(
+                                  backgroundColor: AppColors.navy.withOpacity(0.1),
+                                  child: const Icon(Icons.business, color: AppColors.navy),
+                                ),
+                                title: Text(
+                                  site.adresse,
+                                  style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                                subtitle: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    const SizedBox(height: 4),
+                                    if (site.ville != null)
+                                      Text(' ${site.ville!.nom} ${site.codePostal ?? ''}', style: const TextStyle(color: Colors.black87)),
+                                    if (site.client != null)
+                                      Text(' ${site.client!.prenom} ${site.client!.nom}', 
+                                          style: const TextStyle(color: Colors.black54, fontSize: 13)),
+                                  ],
+                                ),
+                                trailing: const Icon(Icons.chevron_right, color: Colors.grey),
+                                onTap: () {
+                                  Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (context) => SiteDetailScreen(site: site),
+                                    ),
+                                  );
+                                },
                               ),
-                              title: Text(
-                                site.adresse,
-                                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
-                              ),
-                              subtitle: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  const SizedBox(height: 4),
-                                  if (site.ville != null)
-                                    Text(' ${site.ville!.nom}', style: const TextStyle(color: Colors.black87)),
-                                  if (site.codePostal != null)
-                                    Text(' ${site.codePostal}', style: const TextStyle(color: Colors.black54, fontSize: 13)),
-                                  if (site.client != null)
-                                    Text('👤 ${site.client!.prenom} ${site.client!.nom}', 
-                                        style: const TextStyle(color: Colors.black54, fontSize: 13)),
-                                ],
-                              ),
-                              trailing: const Icon(Icons.chevron_right, color: Colors.grey),
-                              onTap: () {
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  SnackBar(content: Text('Détails du site (Bientôt)')),
-                                );
-                              },
-                            ),
-                          );
-                        },
+                            );
+                          },
+                        ),
                       ),
           ),
         ],

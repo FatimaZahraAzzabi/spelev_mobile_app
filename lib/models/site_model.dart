@@ -24,15 +24,53 @@ class SiteModel {
   });
 
   factory SiteModel.fromJson(Map<String, dynamic> json) {
+    // Gestion du Client (données à plat venant du backend)
+    UtilisateurModel? clientObj;
+    if (json['client'] != null && json['client'] is Map) {
+      clientObj = UtilisateurModel.fromJson(json['client']);
+    } else if (json['clientNom'] != null) {
+      clientObj = UtilisateurModel(
+        id: json['clientId'] ?? 0,
+        nom: json['clientNom'] ?? 'Inconnu',
+        prenom: json['clientPrenom'] ?? '', 
+        email: json['clientEmail'] ?? '',
+        telephone: json['clientTelephone'] ?? '',
+        nomEntreprise: json['clientNomEntreprise'] ?? '',
+        type: json['clientType'] ?? 'CLIENT',
+      );
+    }
+
+    // Gestion du Parc
+    ParcModel? parcObj;
+    if (json['parc'] != null && json['parc'] is Map) {
+      parcObj = ParcModel.fromJson(json['parc']);
+    } else if (json['parcNom'] != null) {
+      parcObj = ParcModel(
+        id: json['parcId'] ?? 0,
+        nom: json['parcNom'] ?? 'Non assigné',
+      );
+    }
+
+    // Gestion de la Ville
+    VilleModel? villeObj;
+    if (json['ville'] != null && json['ville'] is Map) {
+      villeObj = VilleModel.fromJson(json['ville']);
+    } else if (json['villeNom'] != null) {
+      villeObj = VilleModel(
+        id: json['villeId'] ?? 0,
+        nom: json['villeNom'] ?? 'Inconnue',
+      );
+    }
+
     return SiteModel(
-      id: json['id'],
+      id: json['id'] ?? 0,
       adresse: json['adresse'] ?? '',
-      codePostal: json['codePostal'],
-      ville: json['ville'] != null ? VilleModel.fromJson(json['ville']) : null,
-      client: json['client'] != null ? UtilisateurModel.fromJson(json['client']) : null,
-      parc: json['parc'] != null ? ParcModel.fromJson(json['parc']) : null,
-      createdAt: json['createdAt'] != null ? DateTime.parse(json['createdAt']) : null,
-      updatedAt: json['updatedAt'] != null ? DateTime.parse(json['updatedAt']) : null,
+      codePostal: json['codePostal'] ?? json['villeCodePostal'],
+      ville: villeObj,
+      client: clientObj,
+      parc: parcObj,
+      createdAt: json['createdAt'] != null ? DateTime.tryParse(json['createdAt'].toString()) : null,
+      updatedAt: json['updatedAt'] != null ? DateTime.tryParse(json['updatedAt'].toString()) : null,
     );
   }
 }

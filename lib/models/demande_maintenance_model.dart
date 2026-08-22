@@ -8,17 +8,22 @@ class DemandeMaintenanceModel {
   final String description;
   final String? dateSouhaitee;
   final String? motifRejet;
-  final int ascenseurId;
+
+  // Peut être null pour une demande d'évaluation
+  final int? ascenseurId;
   final String? ascenseurNom;
+
+  // Adresse saisie directement lors d'une demande d'évaluation
   final String? villeSaisie;
   final String? adresseSaisie;
-  
+
+  // Informations du client
   final int? clientId;
   final String? clientNom;
   final String? clientPrenom;
   final String? clientEmail;
   final String? clientNomEntreprise;
-  
+
   final String? createdAt;
   final List<PieceJointeModel> photos;
 
@@ -27,13 +32,13 @@ class DemandeMaintenanceModel {
     required this.typeDemande,
     required this.priorite,
     required this.statut,
-    this.villeSaisie, 
-    this.adresseSaisie,
     required this.description,
     this.dateSouhaitee,
     this.motifRejet,
-    required this.ascenseurId,
+    this.ascenseurId,
     this.ascenseurNom,
+    this.villeSaisie,
+    this.adresseSaisie,
     this.clientId,
     this.clientNom,
     this.clientPrenom,
@@ -43,71 +48,207 @@ class DemandeMaintenanceModel {
     this.photos = const [],
   });
 
-  // Getter pour le nom complet du client
+  /// Nom complet du client
   String get clientNomComplet {
-    final nom = '${clientPrenom ?? ''} ${clientNom ?? ''}'.trim();
-    if (nom.isEmpty) return clientNomEntreprise ?? 'Client inconnu';
-    if (clientNomEntreprise != null && clientNomEntreprise!.isNotEmpty) {
+    final nom =
+        '${clientPrenom ?? ''} ${clientNom ?? ''}'.trim();
+
+    if (nom.isEmpty) {
+      return clientNomEntreprise ?? 'Client inconnu';
+    }
+
+    if (clientNomEntreprise != null &&
+        clientNomEntreprise!.isNotEmpty) {
       return '$nom ($clientNomEntreprise)';
     }
+
     return nom;
   }
 
-  factory DemandeMaintenanceModel.fromJson(Map<String, dynamic> json) {
-    // Parser les photos
+  factory DemandeMaintenanceModel.fromJson(
+    Map<String, dynamic> json,
+  ) {
+    // ============================
+    // PHOTOS / PIÈCES JOINTES
+    // ============================
+
     List<PieceJointeModel> photosList = [];
-    final photosData = json['photos'] ?? json['piecesJointes'] ?? json['attachments'];
+
+    final photosData =
+        json['photos'] ??
+        json['piecesJointes'] ??
+        json['attachments'];
+
     if (photosData is List) {
       photosList = photosData
           .where((e) => e is Map)
-          .map((e) => PieceJointeModel.fromJson(Map<String, dynamic>.from(e)))
+          .map(
+            (e) => PieceJointeModel.fromJson(
+              Map<String, dynamic>.from(e),
+            ),
+          )
           .toList();
     }
 
-    // Parser l'ascenseur
-    int ascId = json['ascenseurId'] ?? 0;
-    String? ascNom = json['ascenseurNom'];
-    if (json['ascenseur'] is Map) {
-      final asc = json['ascenseur'] as Map<String, dynamic>;
-      ascId = asc['id'] ?? ascId;
-      ascNom = asc['nom'] ?? ascNom;
+    // ============================
+    // ASCENSEUR
+    // Facultatif pour les évaluations
+    // ============================
+
+    int? ascId;
+
+    if (json['ascenseurId'] != null) {
+      ascId =
+          (json['ascenseurId'] as num?)?.toInt();
     }
 
-    int? clientId = json['clientId'];
-    String? clientNom = json['clientNom'];
-    String? clientPrenom = json['clientPrenom'];
-    String? clientEmail = json['clientEmail'];
-    String? clientNomEntreprise = json['clientNomEntreprise'];
-    
+    String? ascNom =
+        json['ascenseurNom']?.toString();
+
+    // Si le backend retourne :
+    // "ascenseur": { "id": 1, "nom": "Ascenseur A" }
+
+    if (json['ascenseur'] is Map) {
+      final asc =
+          Map<String, dynamic>.from(
+        json['ascenseur'],
+      );
+
+      ascId ??=
+          (asc['id'] as num?)?.toInt();
+
+      ascNom ??=
+          asc['nom']?.toString();
+    }
+
+    // ============================
+    // CLIENT
+    // ============================
+
+    int? clientId =
+        (json['clientId'] as num?)?.toInt();
+
+    String? clientNom =
+        json['clientNom']?.toString();
+
+    String? clientPrenom =
+        json['clientPrenom']?.toString();
+
+    String? clientEmail =
+        json['clientEmail']?.toString();
+
+    String? clientNomEntreprise =
+        json['clientNomEntreprise']?.toString();
+
+    // Si le backend retourne :
+    // "client": { ... }
 
     if (json['client'] is Map) {
-      final client = json['client'] as Map<String, dynamic>;
-      clientId ??= client['id'];
-      clientNom ??= client['nom'];
-      clientPrenom ??= client['prenom'];
-      clientEmail ??= client['email'];
-      clientNomEntreprise ??= client['nomEntreprise'];
+      final client =
+          Map<String, dynamic>.from(
+        json['client'],
+      );
+
+      clientId ??=
+          (client['id'] as num?)?.toInt();
+
+      clientNom ??=
+          client['nom']?.toString();
+
+      clientPrenom ??=
+          client['prenom']?.toString();
+
+      clientEmail ??=
+          client['email']?.toString();
+
+      clientNomEntreprise ??=
+          client['nomEntreprise']?.toString();
     }
 
+    // ============================
+    // CRÉATION DU MODÈLE
+    // ============================
+
     return DemandeMaintenanceModel(
-      id: json['id'] ?? 0,
-      typeDemande: json['typeDemande'] ?? 'AUTRE',
-      priorite: json['priorite'] ?? 'NORMALE',
-      statut: json['statut'] ?? 'EN_ATTENTE',
-      description: json['description'] ?? '',
-      dateSouhaitee: json['dateSouhaitee'],
-      motifRejet: json['motifRejet'],
-      villeSaisie: json['villeSaisie'],
-      adresseSaisie: json['adresseSaisie'],
+      id: (json['id'] as num?)?.toInt() ?? 0,
+
+      typeDemande:
+          json['typeDemande']?.toString() ??
+              'AUTRE',
+
+      priorite:
+          json['priorite']?.toString() ??
+              'NORMALE',
+
+      statut:
+          json['statut']?.toString() ??
+              'EN_ATTENTE',
+
+      description:
+          json['description']?.toString() ?? '',
+
+      dateSouhaitee:
+          json['dateSouhaitee']?.toString(),
+
+      motifRejet:
+          json['motifRejet']?.toString(),
+
+      // Peut être null pour une évaluation
       ascenseurId: ascId,
+
       ascenseurNom: ascNom,
+
+      villeSaisie:
+          json['villeSaisie']?.toString(),
+
+      adresseSaisie:
+          json['adresseSaisie']?.toString(),
+
       clientId: clientId,
+
       clientNom: clientNom,
+
       clientPrenom: clientPrenom,
+
       clientEmail: clientEmail,
-      clientNomEntreprise: clientNomEntreprise,
-      createdAt: json['createdAt'],
+
+      clientNomEntreprise:
+          clientNomEntreprise,
+
+      createdAt:
+          json['createdAt']?.toString(),
+
       photos: photosList,
     );
+  }
+
+  /// Vérifie si la demande concerne une évaluation
+  bool get isEvaluation {
+    return typeDemande == 'EVALUATION' ||
+        typeDemande == 'EVALUATION_NOUVELLE_INSTALLATION';
+  }
+
+  /// Vérifie si un ascenseur est associé
+  bool get hasAscenseur {
+    return ascenseurId != null;
+  }
+
+  /// Adresse complète saisie pour une nouvelle installation
+  String get adresseComplete {
+    final parts = <String>[];
+
+    if (adresseSaisie != null &&
+        adresseSaisie!.trim().isNotEmpty) {
+      parts.add(adresseSaisie!.trim());
+    }
+
+    if (villeSaisie != null &&
+        villeSaisie!.trim().isNotEmpty) {
+      parts.add(villeSaisie!.trim());
+    }
+
+    return parts.isEmpty
+        ? 'Adresse non définie'
+        : parts.join(', ');
   }
 }

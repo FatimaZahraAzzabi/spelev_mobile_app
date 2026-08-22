@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'responsable_drawer.dart';
-import '../../services/statistique_service.dart'; // Service pour les stats
+import '../../services/statistique_service.dart'; 
+import '../../widgets/notification_bell_widget.dart';
 
 class ResponsableDashboardScreen extends StatefulWidget {
   const ResponsableDashboardScreen({super.key});
@@ -13,7 +14,6 @@ class _ResponsableDashboardScreenState extends State<ResponsableDashboardScreen>
   final _statService = StatistiqueService();
   bool _isLoading = true;
   
-  // Données réelles depuis la base
   int _interventionsEnCours = 0;
   int _techniciensDisponibles = 0;
   int _urgencesSignalees = 0;
@@ -72,9 +72,12 @@ class _ResponsableDashboardScreenState extends State<ResponsableDashboardScreen>
           ],
         ),
         actions: [
+          const NotificationBellWidget(),
+          const SizedBox(width: 8),
           IconButton(
             icon: const Icon(Icons.refresh, color: Colors.black87),
             onPressed: _chargerStatistiques,
+            tooltip: 'Actualiser',
           ),
           const SizedBox(width: 8),
         ],
@@ -86,7 +89,6 @@ class _ResponsableDashboardScreenState extends State<ResponsableDashboardScreen>
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // 1. Message de bienvenue
                   Text(
                     'Bonjour, Responsable 👋',
                     style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: navyColor),
@@ -98,14 +100,13 @@ class _ResponsableDashboardScreenState extends State<ResponsableDashboardScreen>
                   ),
                   const SizedBox(height: 24),
 
-                  // 2. Cartes de statistiques (Grid 2x2)
                   GridView.count(
                     shrinkWrap: true,
                     physics: const NeverScrollableScrollPhysics(),
                     crossAxisCount: 2,
                     crossAxisSpacing: 12,
                     mainAxisSpacing: 12,
-                    childAspectRatio: 0.95, // ✅ Corrigé pour éviter overflow
+                    childAspectRatio: 0.95, 
                     children: [
                       _buildStatCard('Interventions en cours', '$_interventionsEnCours', Colors.orange, Icons.build_circle),
                       _buildStatCard('Techniciens disponibles', '$_techniciensDisponibles', Colors.green, Icons.engineering),

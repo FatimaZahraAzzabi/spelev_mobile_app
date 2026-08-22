@@ -15,6 +15,7 @@ class ClientDrawer extends StatelessWidget {
           children: [
             _buildHeader(),
             const Divider(color: Colors.white24, height: 1),
+            
             Expanded(
               child: ListView(
                 padding: EdgeInsets.zero,
@@ -24,11 +25,45 @@ class ClientDrawer extends StatelessWidget {
                   _buildMenuItem(Icons.report_problem, 'Mes Demandes', '/client-demandes', context),
                   _buildMenuItem(Icons.fact_check, 'Mes évaluations', '/client-mes-evaluations', context),
                   _buildMenuItem(Icons.request_quote, 'Demande d\'évaluation', '/client-nouvelle-evaluation', context),
-                  _buildMenuItem(Icons.person, 'Mon Profil', '/client-profil', context),
+                  _buildMenuItem(Icons.person, 'Mon Profil',  '/profil', context),
+
                 ],
               ),
             ),
-            _buildLogoutButton(context),
+            
+            SafeArea(
+              child: Container(
+                width: double.infinity,
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: Colors.black.withOpacity(0.3),
+                  border: Border(top: BorderSide(color: Colors.white24, width: 1)),
+                ),
+                child: TextButton.icon(
+                  onPressed: () async {
+                    final storage = const FlutterSecureStorage();
+                    await storage.delete(key: 'jwt_token');
+                    await storage.delete(key: 'user_data');
+                    if (context.mounted) {
+                      Navigator.of(context).pushNamedAndRemoveUntil('/login', (route) => false);
+                    }
+                  },
+                  icon: const Icon(Icons.logout, color: Colors.redAccent, size: 20),
+                  label: const Text(
+                    'Déconnexion',
+                    style: TextStyle(
+                      color: Colors.redAccent,
+                      fontWeight: FontWeight.w600,
+                      fontSize: 16,
+                    ),
+                  ),
+                  style: TextButton.styleFrom(
+                    alignment: Alignment.centerLeft,
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                  ),
+                ),
+              ),
+            ),
           ],
         ),
       ),
@@ -75,24 +110,6 @@ class ClientDrawer extends StatelessWidget {
         Navigator.pop(context);
         Navigator.pushNamed(context, route);
       },
-    );
-  }
-
-  Widget _buildLogoutButton(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.all(16),
-      child: TextButton.icon(
-        onPressed: () async {
-          final storage = const FlutterSecureStorage();
-          await storage.delete(key: 'jwt_token');
-          if (context.mounted) {
-            Navigator.of(context).pushNamedAndRemoveUntil('/login', (route) => false);
-          }
-        },
-        icon: const Icon(Icons.logout, color: Colors.redAccent),
-        label: const Text('Déconnexion', style: TextStyle(color: Colors.redAccent, fontWeight: FontWeight.w600)),
-        style: TextButton.styleFrom(alignment: Alignment.centerLeft),
-      ),
     );
   }
 }

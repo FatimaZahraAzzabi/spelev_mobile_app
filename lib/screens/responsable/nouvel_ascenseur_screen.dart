@@ -8,7 +8,9 @@ import '../../models/utilisateur_model.dart';
 import '../../models/site_model.dart';
 
 class NouvelAscenseurScreen extends StatefulWidget {
-  const NouvelAscenseurScreen({super.key});
+  final AscenseurModel? ascenseur;
+
+  const NouvelAscenseurScreen({super.key, this.ascenseur});
 
   @override
   State<NouvelAscenseurScreen> createState() => _NouvelAscenseurScreenState();
@@ -43,11 +45,72 @@ class _NouvelAscenseurScreenState extends State<NouvelAscenseurScreen> {
   List<UtilisateurModel> _clients = [];
   List<SiteModel> _sites = [];
   bool _loadingClients = false;
+  bool _isInitialized = false;
 
   @override
   void initState() {
     super.initState();
-    _loadClients();
+    _loadClients().then((_) {
+      if (widget.ascenseur != null) {
+        _prefillData();
+      }
+    });
+  }
+
+  void _prefillData() {
+    final asc = widget.ascenseur!;
+
+    _nomController.text = asc.nom;
+    _marqueController.text = asc.marque ?? '';
+    _fabricantController.text = asc.fabricant ?? '';
+    _modeleController.text = asc.modele ?? '';
+    _descriptionController.text = asc.description ?? '';
+    _numeroSerieController.text = asc.numeroSerie ?? '';
+    _codeBarreController.text = asc.codeBarre ?? '';
+    _puissanceController.text = asc.puissance ?? '';
+    _coutAcquisitionController.text = asc.coutAcquisition?.toString() ?? '';
+    _nombreEtagesController.text = asc.nombreEtages?.toString() ?? '';
+    _capaciteController.text = asc.capacitePersonnes?.toString() ?? '';
+    _chargeMaxController.text = asc.chargeMaxKg?.toString() ?? '';
+    _vitesseController.text = asc.vitesse?.toString() ?? '';
+
+    _dateMiseEnService = asc.dateMiseEnService;
+    _dateExpirationGarantie = asc.dateExpirationGarantie;
+    _selectedType = asc.type;
+
+    // Sélection du client
+    if (asc.clientId != null) {
+      final clientsCorrespondants =
+          _clients.where((c) => c.id == asc.clientId).toList();
+
+      if (clientsCorrespondants.isNotEmpty) {
+        _selectedClient = clientsCorrespondants.first;
+
+        _loadSites(_selectedClient!.id).then((_) {
+          if (!mounted) return;
+
+          if (asc.siteId != null) {
+            final sitesCorrespondants =
+                _sites.where((s) => s.id == asc.siteId).toList();
+
+            if (sitesCorrespondants.isNotEmpty) {
+              setState(() {
+                _selectedSite = sitesCorrespondants.first;
+                _isInitialized = true;
+              });
+            }
+          } else {
+            setState(() {
+              _isInitialized = true;
+            });
+          }
+        });
+      }
+    } else {
+      setState(() {
+        _isInitialized = true;
+      });
+    }
   }
 
   Future<void> _loadClients() async {
@@ -74,7 +137,7 @@ class _NouvelAscenseurScreenState extends State<NouvelAscenseurScreen> {
       final sites = await _service.getSitesByClient(clientId);
       setState(() {
         _sites = sites;
-        _selectedSite = null;
+        if (widget.ascenseur == null) _selectedSite = null; 
         _loadingClients = false;
       });
     } catch (e) {
@@ -96,29 +159,36 @@ class _NouvelAscenseurScreenState extends State<NouvelAscenseurScreen> {
           width: double.maxFinite,
           child: _loadingClients
               ? const Center(child: CircularProgressIndicator())
-              : ListView.builder(
-                  shrinkWrap: true,
-                  itemCount: _clients.length,
-                  itemBuilder: (context, index) {
-                    final client = _clients[index];
-                    return ListTile(
-                      title: Text('${client.prenom} ${client.nom}'),
-                      subtitle: Text(client.nomEntreprise ?? ''),
-                      onTap: () {
-                        setState(() {
-                          _selectedClient = client;
-                          _selectedSite = null;
-                        });
-                        _loadSites(client.id);
-                        Navigator.pop(context);
+              : _clients.isEmpty
+                  ? const Padding(
+                      padding: EdgeInsets.all(20),
+                      child: Text('Aucun client disponible'),
+                    )
+                  : ListView.builder(
+                      shrinkWrap: true,
+                      itemCount: _clients.length,
+                      itemBuilder: (context, index) {
+                        final client = _clients[index];
+                        return ListTile(
+                          title: Text('${client.prenom} ${client.nom}'),
+                          subtitle: client.nomEntreprise != null && client.nomEntreprise!.isNotEmpty 
+                              ? Text(client.nomEntreprise!) 
+                              : null,
+                          onTap: () {
+                            setState(() {
+                              _selectedClient = client;
+                              _selectedSite = null;
+                            });
+                            _loadSites(client.id);
+                            Navigator.pop(context);
+                          },
+                        );
                       },
-                    );
-                  },
-                ),
+                    ),
         ),
         actions: [
           TextButton(
-            onPressed: () => Navigator.pop(context),
+            onPressed: () => Navigator.pop(context), 
             child: const Text('Annuler'),
           ),
         ],
@@ -129,37 +199,46 @@ class _NouvelAscenseurScreenState extends State<NouvelAscenseurScreen> {
   void _showSitePicker() {
     if (_selectedClient == null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Veuillez d\'abord sélectionner un client'), backgroundColor: Colors.orange),
+        const SnackBar(
+          content: Text('Veuillez d\'abord sélectionner un client'), 
+          backgroundColor: Colors.orange,
+        ),
       );
       return;
     }
+    
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
         title: const Text('Sélectionner un site'),
         content: SizedBox(
           width: double.maxFinite,
-          child: _sites.isEmpty
-              ? const Padding(padding: EdgeInsets.all(20), child: Text('Aucun site disponible pour ce client'))
-              : ListView.builder(
-                  shrinkWrap: true,
-                  itemCount: _sites.length,
-                  itemBuilder: (context, index) {
-                    final site = _sites[index];
-                    return ListTile(
-                      title: Text(site.adresse),
-                      subtitle: site.ville != null ? Text('Ville: ${site.ville!.nom}') : null,
-                      onTap: () {
-                        setState(() => _selectedSite = site);
-                        Navigator.pop(context);
+          child: _loadingClients
+              ? const Center(child: CircularProgressIndicator())
+              : _sites.isEmpty
+                  ? const Padding(
+                      padding: EdgeInsets.all(20), 
+                      child: Text('Aucun site disponible pour ce client'),
+                    )
+                  : ListView.builder(
+                      shrinkWrap: true,
+                      itemCount: _sites.length,
+                      itemBuilder: (context, index) {
+                        final site = _sites[index];
+                        return ListTile(
+                          title: Text(site.adresse),
+                          subtitle: site.ville != null ? Text('Ville: ${site.ville!.nom}') : null,
+                          onTap: () {
+                            setState(() => _selectedSite = site);
+                            Navigator.pop(context);
+                          },
+                        );
                       },
-                    );
-                  },
-                ),
+                    ),
         ),
         actions: [
           TextButton(
-            onPressed: () => Navigator.pop(context),
+            onPressed: () => Navigator.pop(context), 
             child: const Text('Annuler'),
           ),
         ],
@@ -170,7 +249,9 @@ class _NouvelAscenseurScreenState extends State<NouvelAscenseurScreen> {
   Future<void> _selectDate(BuildContext context, bool isMiseEnService) async {
     final DateTime? picked = await showDatePicker(
       context: context,
-      initialDate: DateTime.now(),
+      initialDate: isMiseEnService 
+          ? (_dateMiseEnService ?? DateTime.now())
+          : (_dateExpirationGarantie ?? DateTime.now()),
       firstDate: DateTime(2000),
       lastDate: DateTime(2100),
     );
@@ -187,6 +268,8 @@ class _NouvelAscenseurScreenState extends State<NouvelAscenseurScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final isEditMode = widget.ascenseur != null;
+
     return Scaffold(
       backgroundColor: Colors.grey[100],
       drawer: const ResponsableDrawer(currentRoute: '/responsable-ascenseur-list'),
@@ -194,9 +277,9 @@ class _NouvelAscenseurScreenState extends State<NouvelAscenseurScreen> {
         backgroundColor: Colors.white,
         elevation: 0,
         iconTheme: const IconThemeData(color: Colors.black87),
-        title: const Text(
-          'Nouvel ascenseur',
-          style: TextStyle(color: Colors.black87, fontWeight: FontWeight.bold),
+        title: Text(
+          isEditMode ? 'Modifier l\'ascenseur' : 'Nouvel ascenseur',
+          style: const TextStyle(color: Colors.black87, fontWeight: FontWeight.bold),
         ),
       ),
       body: SingleChildScrollView(
@@ -216,13 +299,13 @@ class _NouvelAscenseurScreenState extends State<NouvelAscenseurScreen> {
                       onTap: _showClientPicker,
                       child: InputDecorator(
                         decoration: const InputDecoration(
-                          labelText: 'Client *',
-                          border: OutlineInputBorder(),
+                          labelText: 'Client *', 
+                          border: OutlineInputBorder(), 
                           suffixIcon: Icon(Icons.arrow_drop_down),
                         ),
                         child: Text(
                           _selectedClient != null 
-                              ? '${_selectedClient!.prenom} ${_selectedClient!.nom}' 
+                              ? '${_selectedClient!.prenom} ${_selectedClient!.nom}'
                               : '-- Sélectionner un client --',
                           style: TextStyle(
                             color: _selectedClient != null ? Colors.black : Colors.grey,
@@ -237,8 +320,8 @@ class _NouvelAscenseurScreenState extends State<NouvelAscenseurScreen> {
                       onTap: _showSitePicker,
                       child: InputDecorator(
                         decoration: const InputDecoration(
-                          labelText: 'Site *',
-                          border: OutlineInputBorder(),
+                          labelText: 'Site *', 
+                          border: OutlineInputBorder(), 
                           suffixIcon: Icon(Icons.add_circle, color: AppColors.orange),
                         ),
                         child: Text(
@@ -265,8 +348,8 @@ class _NouvelAscenseurScreenState extends State<NouvelAscenseurScreen> {
                     child: TextFormField(
                       controller: _nomController,
                       decoration: const InputDecoration(
-                        labelText: 'Nom *',
-                        hintText: 'Ex: Ascenseur Bloc A',
+                        labelText: 'Nom *', 
+                        hintText: 'Ex: Ascenseur Bloc A', 
                         border: OutlineInputBorder(),
                       ),
                       validator: (v) => (v == null || v.trim().isEmpty) ? 'Requis' : null,
@@ -277,8 +360,8 @@ class _NouvelAscenseurScreenState extends State<NouvelAscenseurScreen> {
                     child: TextFormField(
                       controller: _marqueController,
                       decoration: const InputDecoration(
-                        labelText: 'Marque *',
-                        hintText: 'Ex: Otis',
+                        labelText: 'Marque *', 
+                        hintText: 'Ex: Otis', 
                         border: OutlineInputBorder(),
                       ),
                       validator: (v) => (v == null || v.trim().isEmpty) ? 'Requis' : null,
@@ -293,8 +376,8 @@ class _NouvelAscenseurScreenState extends State<NouvelAscenseurScreen> {
                     child: TextFormField(
                       controller: _fabricantController,
                       decoration: const InputDecoration(
-                        labelText: 'Fabricant *',
-                        hintText: 'Ex: Otis France',
+                        labelText: 'Fabricant *', 
+                        hintText: 'Ex: Otis France', 
                         border: OutlineInputBorder(),
                       ),
                       validator: (v) => (v == null || v.trim().isEmpty) ? 'Requis' : null,
@@ -305,8 +388,8 @@ class _NouvelAscenseurScreenState extends State<NouvelAscenseurScreen> {
                     child: TextFormField(
                       controller: _modeleController,
                       decoration: const InputDecoration(
-                        labelText: 'Modèle',
-                        hintText: 'Ex: Gen2',
+                        labelText: 'Modèle', 
+                        hintText: 'Ex: Gen2', 
                         border: OutlineInputBorder(),
                       ),
                     ),
@@ -321,8 +404,8 @@ class _NouvelAscenseurScreenState extends State<NouvelAscenseurScreen> {
                       controller: _coutAcquisitionController,
                       keyboardType: TextInputType.number,
                       decoration: const InputDecoration(
-                        labelText: 'Coût d\'acquisition (DH)',
-                        hintText: 'Ex: 150000',
+                        labelText: 'Coût d\'acquisition (DH)', 
+                        hintText: 'Ex: 150000', 
                         border: OutlineInputBorder(),
                       ),
                     ),
@@ -332,14 +415,15 @@ class _NouvelAscenseurScreenState extends State<NouvelAscenseurScreen> {
                     child: DropdownButtonFormField<String>(
                       value: _selectedType,
                       decoration: const InputDecoration(
-                        labelText: 'Type',
+                        labelText: 'Type', 
                         border: OutlineInputBorder(),
                       ),
                       items: const [
-  DropdownMenuItem(value: 'HYDRAULIQUE', child: Text('Hydraulique')),
-  DropdownMenuItem(value: 'TRACTION', child: Text('Traction')),
-  DropdownMenuItem(value: 'MRL', child: Text('MRL (Sans salle des machines)')),
-],
+                        DropdownMenuItem(value: 'HYDRAULIQUE', child: Text('Hydraulique')),
+                        DropdownMenuItem(value: 'TRACTION', child: Text('Traction')),
+                        DropdownMenuItem(value: 'MRL', child: Text('MRL (Sans salle des machines)')),
+                        DropdownMenuItem(value: 'PNEUMATIQUE', child: Text('Pneumatique')),
+                      ],
                       onChanged: (value) => setState(() => _selectedType = value),
                     ),
                   ),
@@ -356,8 +440,8 @@ class _NouvelAscenseurScreenState extends State<NouvelAscenseurScreen> {
                     child: TextFormField(
                       controller: _numeroSerieController,
                       decoration: const InputDecoration(
-                        labelText: 'Numéro de série',
-                        hintText: 'Ex: SN-2026-001',
+                        labelText: 'Numéro de série', 
+                        hintText: 'Ex: SN-2026-001', 
                         border: OutlineInputBorder(),
                       ),
                     ),
@@ -367,8 +451,8 @@ class _NouvelAscenseurScreenState extends State<NouvelAscenseurScreen> {
                     child: TextFormField(
                       controller: _codeBarreController,
                       decoration: const InputDecoration(
-                        labelText: 'Code-barre',
-                        hintText: 'Ex: CB-001',
+                        labelText: 'Code-barre', 
+                        hintText: 'Ex: CB-001', 
                         border: OutlineInputBorder(),
                       ),
                     ),
@@ -387,8 +471,8 @@ class _NouvelAscenseurScreenState extends State<NouvelAscenseurScreen> {
                       controller: _nombreEtagesController,
                       keyboardType: TextInputType.number,
                       decoration: const InputDecoration(
-                        labelText: "Nombre d'étages",
-                        hintText: 'Ex: 10',
+                        labelText: "Nombre d'étages", 
+                        hintText: 'Ex: 10', 
                         border: OutlineInputBorder(),
                       ),
                     ),
@@ -399,8 +483,8 @@ class _NouvelAscenseurScreenState extends State<NouvelAscenseurScreen> {
                       controller: _capaciteController,
                       keyboardType: TextInputType.number,
                       decoration: const InputDecoration(
-                        labelText: 'Capacité (personnes)',
-                        hintText: 'Ex: 8',
+                        labelText: 'Capacité (personnes)', 
+                        hintText: 'Ex: 8', 
                         border: OutlineInputBorder(),
                       ),
                     ),
@@ -415,8 +499,8 @@ class _NouvelAscenseurScreenState extends State<NouvelAscenseurScreen> {
                       controller: _chargeMaxController,
                       keyboardType: TextInputType.number,
                       decoration: const InputDecoration(
-                        labelText: 'Charge max (kg)',
-                        hintText: 'Ex: 630',
+                        labelText: 'Charge max (kg)', 
+                        hintText: 'Ex: 630', 
                         border: OutlineInputBorder(),
                       ),
                     ),
@@ -427,8 +511,8 @@ class _NouvelAscenseurScreenState extends State<NouvelAscenseurScreen> {
                       controller: _vitesseController,
                       keyboardType: TextInputType.number,
                       decoration: const InputDecoration(
-                        labelText: 'Vitesse (m/s)',
-                        hintText: 'Ex: 1.6',
+                        labelText: 'Vitesse (m/s)', 
+                        hintText: 'Ex: 1.6', 
                         border: OutlineInputBorder(),
                       ),
                     ),
@@ -439,8 +523,8 @@ class _NouvelAscenseurScreenState extends State<NouvelAscenseurScreen> {
               TextFormField(
                 controller: _puissanceController,
                 decoration: const InputDecoration(
-                  labelText: 'Puissance',
-                  hintText: 'Ex: 15kW',
+                  labelText: 'Puissance', 
+                  hintText: 'Ex: 15kW', 
                   border: OutlineInputBorder(),
                 ),
               ),
@@ -456,13 +540,13 @@ class _NouvelAscenseurScreenState extends State<NouvelAscenseurScreen> {
                       onTap: () => _selectDate(context, true),
                       child: InputDecorator(
                         decoration: const InputDecoration(
-                          labelText: 'Date de mise en service',
-                          border: OutlineInputBorder(),
+                          labelText: 'Date de mise en service', 
+                          border: OutlineInputBorder(), 
                           suffixIcon: Icon(Icons.calendar_today),
                         ),
                         child: Text(
-                          _dateMiseEnService != null
-                              ? DateFormat('dd/MM/yyyy').format(_dateMiseEnService!)
+                          _dateMiseEnService != null 
+                              ? DateFormat('dd/MM/yyyy').format(_dateMiseEnService!) 
                               : 'jj/mm/aaaa',
                           style: TextStyle(
                             color: _dateMiseEnService != null ? Colors.black : Colors.grey,
@@ -477,13 +561,13 @@ class _NouvelAscenseurScreenState extends State<NouvelAscenseurScreen> {
                       onTap: () => _selectDate(context, false),
                       child: InputDecorator(
                         decoration: const InputDecoration(
-                          labelText: "Date d'expiration garantie",
-                          border: OutlineInputBorder(),
+                          labelText: "Date d'expiration garantie", 
+                          border: OutlineInputBorder(), 
                           suffixIcon: Icon(Icons.calendar_today),
                         ),
                         child: Text(
-                          _dateExpirationGarantie != null
-                              ? DateFormat('dd/MM/yyyy').format(_dateExpirationGarantie!)
+                          _dateExpirationGarantie != null 
+                              ? DateFormat('dd/MM/yyyy').format(_dateExpirationGarantie!) 
                               : 'jj/mm/aaaa',
                           style: TextStyle(
                             color: _dateExpirationGarantie != null ? Colors.black : Colors.grey,
@@ -496,12 +580,12 @@ class _NouvelAscenseurScreenState extends State<NouvelAscenseurScreen> {
               ),
               const SizedBox(height: 24),
 
-              // Description
+              // Description et infos supplémentaires
               TextFormField(
                 controller: _descriptionController,
                 maxLines: 3,
                 decoration: const InputDecoration(
-                  labelText: 'Description',
+                  labelText: 'Description', 
                   border: OutlineInputBorder(),
                 ),
               ),
@@ -510,7 +594,7 @@ class _NouvelAscenseurScreenState extends State<NouvelAscenseurScreen> {
                 controller: _informationsSuppController,
                 maxLines: 2,
                 decoration: const InputDecoration(
-                  labelText: 'Informations supplémentaires',
+                  labelText: 'Informations supplémentaires', 
                   border: OutlineInputBorder(),
                 ),
               ),
@@ -525,7 +609,9 @@ class _NouvelAscenseurScreenState extends State<NouvelAscenseurScreen> {
                       style: OutlinedButton.styleFrom(
                         padding: const EdgeInsets.symmetric(vertical: 16),
                         side: const BorderSide(color: Colors.grey),
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(8),
+                        ),
                       ),
                       child: const Text('Annuler', style: TextStyle(color: Colors.black87)),
                     ),
@@ -539,13 +625,22 @@ class _NouvelAscenseurScreenState extends State<NouvelAscenseurScreen> {
                         backgroundColor: AppColors.orange,
                         foregroundColor: Colors.white,
                         padding: const EdgeInsets.symmetric(vertical: 16),
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(8),
+                        ),
                       ),
                       child: _isLoading
-                          ? const CircularProgressIndicator(color: Colors.white)
-                          : const Text(
-                              'Créer l\'ascenseur',
-                              style: TextStyle(fontWeight: FontWeight.bold),
+                          ? const SizedBox(
+                              height: 20,
+                              width: 20,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2,
+                                color: Colors.white,
+                              ),
+                            )
+                          : Text(
+                              isEditMode ? 'Enregistrer les modifications' : 'Créer l\'ascenseur',
+                              style: const TextStyle(fontWeight: FontWeight.bold),
                             ),
                     ),
                   ),
@@ -562,9 +657,9 @@ class _NouvelAscenseurScreenState extends State<NouvelAscenseurScreen> {
     return Text(
       title,
       style: const TextStyle(
-        fontSize: 14,
-        fontWeight: FontWeight.w700,
-        color: AppColors.navy,
+        fontSize: 14, 
+        fontWeight: FontWeight.w700, 
+        color: AppColors.navy, 
         letterSpacing: 0.5,
       ),
     );
@@ -572,9 +667,23 @@ class _NouvelAscenseurScreenState extends State<NouvelAscenseurScreen> {
 
   Future<void> _submitForm() async {
     if (!_formKey.currentState!.validate()) return;
-    if (_selectedClient == null || _selectedSite == null) {
+    
+    if (_selectedClient == null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Veuillez sélectionner un client et un site'), backgroundColor: Colors.red),
+        const SnackBar(
+          content: Text('Veuillez sélectionner un client'), 
+          backgroundColor: Colors.red,
+        ),
+      );
+      return;
+    }
+    
+    if (_selectedSite == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Veuillez sélectionner un site'), 
+          backgroundColor: Colors.red,
+        ),
       );
       return;
     }
@@ -616,18 +725,36 @@ class _NouvelAscenseurScreenState extends State<NouvelAscenseurScreen> {
         'siteId': _selectedSite!.id,
       };
 
-      await _service.createAscenseur(dto);
-      
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Ascenseur créé avec succès'), backgroundColor: Colors.green),
-        );
-        Navigator.pop(context);
+      if (widget.ascenseur != null) {
+        await _service.updateAscenseur(widget.ascenseur!.id, dto);
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Ascenseur modifié avec succès'), 
+              backgroundColor: Colors.green,
+            ),
+          );
+          Navigator.pop(context, true); 
+        }
+      } else {
+        await _service.createAscenseur(dto);
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Ascenseur créé avec succès'), 
+              backgroundColor: Colors.green,
+            ),
+          );
+          Navigator.pop(context, true);
+        }
       }
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Erreur: $e'), backgroundColor: Colors.red),
+          SnackBar(
+            content: Text('Erreur: ${e.toString()}'), 
+            backgroundColor: Colors.red,
+          ),
         );
       }
     } finally {

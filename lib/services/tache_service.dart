@@ -1,10 +1,11 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import '../config/api_config.dart';
 import '../models/tache_model.dart';
 
 class TacheService {
-  final String baseUrl = "http://192.168.1.27:8080/api/taches";
+  final String baseUrl = '${ApiConfig.baseUrl}/api/taches';
   final _storage = const FlutterSecureStorage();
 
   Future<String?> _getToken() async {
@@ -25,10 +26,16 @@ class TacheService {
 
     if (response.statusCode == 200) {
       final jsonResponse = jsonDecode(response.body);
-      final List<dynamic> dataList = jsonResponse['data'] ?? jsonResponse;
-      return dataList.map((json) => TacheModel.fromJson(json)).toList();
+      final List<dynamic> dataList =
+          jsonResponse['data'] ?? jsonResponse;
+
+      return dataList
+          .map((json) => TacheModel.fromJson(json))
+          .toList();
     } else {
-      throw Exception('Erreur: ${response.statusCode}');
+      throw Exception(
+        'Erreur: ${response.statusCode} - ${response.body}',
+      );
     }
   }
 
@@ -46,14 +53,22 @@ class TacheService {
 
     if (response.statusCode == 200) {
       final jsonResponse = jsonDecode(response.body);
-      final List<dynamic> dataList = jsonResponse['data'] ?? jsonResponse;
-      return dataList.map((json) => TacheModel.fromJson(json)).toList();
+      final List<dynamic> dataList =
+          jsonResponse['data'] ?? jsonResponse;
+
+      return dataList
+          .map((json) => TacheModel.fromJson(json))
+          .toList();
     } else {
-      throw Exception('Erreur: ${response.statusCode}');
+      throw Exception(
+        'Erreur: ${response.statusCode} - ${response.body}',
+      );
     }
   }
 
-  Future<TacheModel> createTache(Map<String, dynamic> dto) async {
+  Future<TacheModel> createTache(
+    Map<String, dynamic> dto,
+  ) async {
     final token = await _getToken();
     if (token == null) throw Exception("Token manquant");
 
@@ -66,15 +81,24 @@ class TacheService {
       body: jsonEncode(dto),
     );
 
-    if (response.statusCode == 200 || response.statusCode == 201) {
+    if (response.statusCode == 200 ||
+        response.statusCode == 201) {
       final jsonResponse = jsonDecode(response.body);
-      return TacheModel.fromJson(jsonResponse['data'] ?? jsonResponse);
+
+      return TacheModel.fromJson(
+        jsonResponse['data'] ?? jsonResponse,
+      );
     } else {
-      throw Exception('Erreur: ${response.statusCode} - ${response.body}');
+      throw Exception(
+        'Erreur: ${response.statusCode} - ${response.body}',
+      );
     }
   }
 
-  Future<TacheModel> updateStatut(int id, String statut) async {
+  Future<TacheModel> updateStatut(
+    int id,
+    String statut,
+  ) async {
     final token = await _getToken();
     if (token == null) throw Exception("Token manquant");
 
@@ -84,14 +108,21 @@ class TacheService {
         'Content-Type': 'application/json',
         'Authorization': 'Bearer $token',
       },
-      body: jsonEncode({'statut': statut}),
+      body: jsonEncode({
+        'statut': statut,
+      }),
     );
 
     if (response.statusCode == 200) {
       final jsonResponse = jsonDecode(response.body);
-      return TacheModel.fromJson(jsonResponse['data'] ?? jsonResponse);
+
+      return TacheModel.fromJson(
+        jsonResponse['data'] ?? jsonResponse,
+      );
     } else {
-      throw Exception('Erreur: ${response.statusCode}');
+      throw Exception(
+        'Erreur: ${response.statusCode} - ${response.body}',
+      );
     }
   }
 
@@ -106,13 +137,18 @@ class TacheService {
       },
     );
 
-    if (response.statusCode != 200 && response.statusCode != 204) {
-      throw Exception('Erreur suppression: ${response.statusCode}');
+    if (response.statusCode != 200 &&
+        response.statusCode != 204) {
+      throw Exception(
+        'Erreur suppression: ${response.statusCode}',
+      );
     }
   }
 
-
-      Future<TacheModel> assignerTechniciens(int tacheId, List<int> technicienIds) async {
+  Future<TacheModel> assignerTechniciens(
+    int tacheId,
+    List<int> technicienIds,
+  ) async {
     final token = await _getToken();
     if (token == null) throw Exception("Token manquant");
 
@@ -122,16 +158,21 @@ class TacheService {
         'Content-Type': 'application/json',
         'Authorization': 'Bearer $token',
       },
-      body: jsonEncode({'technicienIds': technicienIds}),
+      body: jsonEncode({
+        'technicienIds': technicienIds,
+      }),
     );
 
     if (response.statusCode == 200) {
       final jsonResponse = jsonDecode(response.body);
-      return TacheModel.fromJson(jsonResponse['data'] ?? jsonResponse);
+
+      return TacheModel.fromJson(
+        jsonResponse['data'] ?? jsonResponse,
+      );
     } else {
-      throw Exception('Erreur assignation: ${response.statusCode} - ${response.body}');
+      throw Exception(
+        'Erreur assignation: ${response.statusCode} - ${response.body}',
+      );
     }
   }
-
-
 }

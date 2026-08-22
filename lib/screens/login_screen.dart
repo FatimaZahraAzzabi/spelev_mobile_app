@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart'; 
 import '../theme/app_theme.dart';
 import '../services/auth_service.dart'; 
+import 'forgot_password_screen.dart'; 
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -61,7 +62,7 @@ class _LoginScreenState extends State<LoginScreen> {
           targetRoute = '/client-dashboard';
           break;
         case 'RESPONSABLE_MAINTENANCE':
-          targetRoute = '/responsable-dashboard'; // ✅ Redirection parfaite vers le dossier responsable
+          targetRoute = '/responsable-dashboard';
           break;
         default:
           ScaffoldMessenger.of(context).showSnackBar(
@@ -139,7 +140,6 @@ class _LoginScreenState extends State<LoginScreen> {
                             controller: _emailController,
                             keyboardType: TextInputType.emailAddress,
                             decoration: const InputDecoration(
-                              // ✅ MODIFICATION ICI : Placeholder général
                               hintText: 'votre.email@exemple.com', 
                               prefixIcon: Icon(Icons.mail_outline, color: Colors.black54),
                             ),
@@ -161,7 +161,28 @@ class _LoginScreenState extends State<LoginScreen> {
                             ),
                             validator: (v) => (v == null || v.length < 4) ? 'Mot de passe trop court' : null,
                           ),
-                          const SizedBox(height: 24),
+                          
+                          Align(
+                            alignment: Alignment.centerRight,
+                            child: TextButton(
+                              onPressed: () {
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(builder: (context) => const ForgotPasswordScreen()),
+                                );
+                              },
+                              child: const Text(
+                                'Mot de passe oublié ?',
+                                style: TextStyle(
+                                  color: AppColors.orange, 
+                                  fontSize: 13, 
+                                  fontWeight: FontWeight.w600
+                                ),
+                              ),
+                            ),
+                          ),
+                          
+                          const SizedBox(height: 12), // Espacement ajusté
                           SizedBox(
                             width: double.infinity,
                             child: ElevatedButton(

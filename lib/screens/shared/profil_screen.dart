@@ -1,23 +1,25 @@
-import 'package:flutter/foundation.dart';
+// lib/screens/shared/profil_screen.dart
 import 'package:flutter/material.dart';
 import 'package:flutter/painting.dart' as painting;
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import 'dart:convert';
 import '../../config/api_config.dart';
 import '../../models/profil_model.dart';
 import '../../services/profil_service.dart';
 import '../../theme/app_theme.dart';
-import 'responsable_drawer.dart';
-import 'edit_responsable_profil_screen.dart';
+import '../../widgets/profile_avatar.dart';
+import 'edit_profil_screen.dart';
 
-class ResponsableProfilScreen extends StatefulWidget {
-  const ResponsableProfilScreen({super.key});
+class ProfilScreen extends StatefulWidget {
+  const ProfilScreen({super.key});
 
   @override
-  State<ResponsableProfilScreen> createState() => _ResponsableProfilScreenState();
+  State<ProfilScreen> createState() => _ProfilScreenState();
 }
 
-class _ResponsableProfilScreenState extends State<ResponsableProfilScreen> {
+class _ProfilScreenState extends State<ProfilScreen> {
   final _service = ProfilService();
+  final _storage = const FlutterSecureStorage();
   ProfilModel? _profil;
   bool _isLoading = true;
   int _refreshKey = 0;
@@ -30,7 +32,6 @@ class _ResponsableProfilScreenState extends State<ResponsableProfilScreen> {
 
   Future<void> _loadProfil({bool clearCache = false}) async {
     setState(() => _isLoading = true);
-    
     if (clearCache) {
       painting.PaintingBinding.instance.imageCache.clear();
       painting.PaintingBinding.instance.imageCache.clearLiveImages();
@@ -39,13 +40,20 @@ class _ResponsableProfilScreenState extends State<ResponsableProfilScreen> {
     
     try {
       final profil = await _service.getProfil();
+      
+      // Mettre à jour le stockage local pour que le Drawer se mette à jour instantanément
+      final oldUserStr = await _storage.read(key: 'user_data');
+      if (oldUserStr != null) {
+        final Map<String, dynamic> userData = jsonDecode(oldUserStr);
+        userData['nom'] = profil.nom;
+        userData['prenom'] = profil.prenom;
+        userData['photoUrl'] = profil.photoUrl;
+        await _storage.write(key: 'user_data', value: jsonEncode(userData));
+      }
+      
       if (mounted) setState(() => _profil = profil);
     } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Erreur: $e'), backgroundColor: Colors.red),
-        );
-      }
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Erreur: $e'), backgroundColor: Colors.red));
     } finally {
       if (mounted) setState(() => _isLoading = false);
     }
@@ -53,28 +61,22 @@ class _ResponsableProfilScreenState extends State<ResponsableProfilScreen> {
 
   Future<void> _openEdit() async {
     if (_profil == null) return;
-    final result = await Navigator.push(
-      context,
-      MaterialPageRoute(builder: (_) => EditResponsableProfilScreen(profil: _profil!)),
-    );
+    final result = await Navigator.push(context, MaterialPageRoute(builder: (_) => EditProfilScreen(profil: _profil!)));
     if (result == true) _loadProfil(clearCache: true);
   }
 
   @override
   Widget build(BuildContext context) {
+  
     return Scaffold(
       backgroundColor: Colors.grey[100],
-      drawer: const ResponsableDrawer(currentRoute: '/responsable-profil'), 
+      // drawer: TonDrawerDynamique, 
       appBar: AppBar(
         backgroundColor: Colors.white,
         elevation: 2,
-        iconTheme: const IconThemeData(color: Colors.black87),
         title: const Text('Mon Profil', style: TextStyle(color: Colors.black87, fontWeight: FontWeight.bold)),
         actions: [
-          IconButton(
-            icon: const Icon(Icons.refresh, color: AppColors.orange),
-            onPressed: () => _loadProfil(clearCache: true),
-          ),
+          IconButton(icon: const Icon(Icons.refresh, color: AppColors.orange), onPressed: () => _loadProfil(clearCache: true)),
         ],
       ),
       body: _isLoading
@@ -94,6 +96,7 @@ class _ResponsableProfilScreenState extends State<ResponsableProfilScreen> {
 
   Widget _buildBody(ProfilModel profil) {
     final aPhoto = profil.photoUrl != null && profil.photoUrl!.isNotEmpty;
+    final isTechnicien = profil.role == 'TECHNICIEN';
 
     return SingleChildScrollView(
       padding: const EdgeInsets.all(16),
@@ -105,31 +108,24 @@ class _ResponsableProfilScreenState extends State<ResponsableProfilScreen> {
               padding: const EdgeInsets.all(24),
               child: Column(
                 children: [
-                  ProfileAvatarProxy(
-                    initiale: (profil.prenom ?? '').isNotEmpty ? profil.prenom![0].toUpperCase() : 'R',
+                  ProfileAvatar(
+                    initiale: (profil.prenom ?? 'U')[0].toUpperCase(),
                     hasPhoto: aPhoto,
                     refreshKey: _refreshKey,
                   ),
                   const SizedBox(height: 16),
-                  Text(
-                    profil.nomComplet,
-                    style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: AppColors.navy),
-                  ),
+                  Text(profil.nomComplet, style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: AppColors.navy)),
                   const SizedBox(height: 4),
                   Text(profil.email ?? '', style: const TextStyle(fontSize: 14, color: Colors.black54)),
-                  if (profil.role != null) ...[
+                  const SizedBox(height: 8),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                    decoration: BoxDecoration(color: AppColors.orange.withOpacity(0.15), borderRadius: BorderRadius.circular(12)),
+                    child: Text(profil.role?.replaceAll('_', ' ') ?? 'Utilisateur', style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: AppColors.orange)),
+                  ),
+                  if (isTechnicien && profil.specialite != null && profil.specialite!.isNotEmpty) ...[
                     const SizedBox(height: 8),
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-                      decoration: BoxDecoration(
-                        color: AppColors.orange.withOpacity(0.15),
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: Text(
-                        profil.role!,
-                        style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: AppColors.orange),
-                      ),
-                    ),
+                    Text(profil.specialite!, style: TextStyle(fontSize: 12, color: Colors.grey[600])),
                   ],
                 ],
               ),
@@ -149,10 +145,13 @@ class _ResponsableProfilScreenState extends State<ResponsableProfilScreen> {
                   _infoRow(Icons.person_outline, 'Nom', profil.nom ?? 'Non renseigné'),
                   _infoRow(Icons.email, 'Email', profil.email ?? 'Non renseigné'),
                   _infoRow(Icons.phone, 'Téléphone', profil.telephone ?? 'Non renseigné'),
-                  if (profil.entreprise != null && profil.entreprise!.isNotEmpty)
-                    _infoRow(Icons.business, 'Entreprise', profil.entreprise!),
+                  if (profil.nomEntreprise != null && profil.nomEntreprise!.isNotEmpty)
+                    _infoRow(Icons.business, 'Entreprise', profil.nomEntreprise!),
                   if (profil.adresse != null && profil.adresse!.isNotEmpty)
                     _infoRow(Icons.location_on, 'Adresse', profil.adresse!),
+                  if (isTechnicien && profil.specialite != null && profil.specialite!.isNotEmpty)
+                    _infoRow(Icons.build, 'Spécialité', profil.specialite!),
+                  _infoRow(Icons.check_circle, 'Statut', profil.actif == true ? 'Actif ✓' : 'Inactif', valueColor: profil.actif == true ? Colors.green : Colors.red),
                 ],
               ),
             ),
@@ -163,7 +162,7 @@ class _ResponsableProfilScreenState extends State<ResponsableProfilScreen> {
     );
   }
 
-  Widget _infoRow(IconData icon, String label, String value) {
+  Widget _infoRow(IconData icon, String label, String value, {Color? valueColor}) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 12),
       child: Row(
@@ -176,70 +175,12 @@ class _ResponsableProfilScreenState extends State<ResponsableProfilScreen> {
               children: [
                 Text(label, style: const TextStyle(fontSize: 12, color: Colors.black54)),
                 const SizedBox(height: 2),
-                Text(value, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600)),
+                Text(value, style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: valueColor)),
               ],
             ),
           ),
         ],
       ),
-    );
-  }
-}
-
-// ═══════════════════════════════════════════════════════════
-// Widget Avatar (à garder ici ou déplacer dans un dossier shared/widgets)
-// ═══════════════════════════════════════════════════════════
-class ProfileAvatarProxy extends StatefulWidget {
-  final String initiale;
-  final bool hasPhoto;
-  final int refreshKey;
-
-  const ProfileAvatarProxy({super.key, required this.initiale, required this.hasPhoto, required this.refreshKey});
-
-  @override
-  State<ProfileAvatarProxy> createState() => _ProfileAvatarProxyState();
-}
-
-class _ProfileAvatarProxyState extends State<ProfileAvatarProxy> {
-  bool _error = false;
-  String? _token;
-
-  @override
-  void initState() {
-    super.initState();
-    _loadToken();
-  }
-
-  @override
-  void didUpdateWidget(ProfileAvatarProxy oldWidget) {
-    super.didUpdateWidget(oldWidget);
-    if (oldWidget.refreshKey != widget.refreshKey) setState(() => _error = false);
-  }
-
-  Future<void> _loadToken() async {
-    const storage = FlutterSecureStorage();
-    final token = await storage.read(key: 'jwt_token');
-    if (mounted) setState(() => _token = token);
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    if (!widget.hasPhoto || _token == null || _error) {
-      return CircleAvatar(
-        radius: 60,
-        backgroundColor: AppColors.navy,
-        child: Text(widget.initiale, style: const TextStyle(fontSize: 48, color: Colors.white, fontWeight: FontWeight.bold)),
-      );
-    }
-
-    final photoProxyUrl = '${ApiConfig.baseUrl}/api/utilisateurs/photo?t=${widget.refreshKey}';
-    return CircleAvatar(
-      radius: 60,
-      key: ValueKey('avatar_${widget.refreshKey}'),
-      backgroundImage: NetworkImage(photoProxyUrl, headers: {'Authorization': 'Bearer $_token'}),
-      onBackgroundImageError: (error, stackTrace) {
-        if (mounted) setState(() => _error = true);
-      },
     );
   }
 }

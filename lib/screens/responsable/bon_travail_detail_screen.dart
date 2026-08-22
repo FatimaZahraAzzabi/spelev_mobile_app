@@ -3,9 +3,10 @@ import '../../models/bon_travail_model.dart';
 import '../../services/bon_travail_service.dart';
 import '../../theme/app_theme.dart';
 import 'responsable_drawer.dart';
+import '../../widgets/messagerie_interne_widget.dart';
 
 class BonTravailDetailScreen extends StatefulWidget {
-  final int bonId; 
+  final int bonId;
 
   const BonTravailDetailScreen({super.key, required this.bonId});
 
@@ -21,7 +22,7 @@ class _BonTravailDetailScreenState extends State<BonTravailDetailScreen> {
   @override
   void initState() {
     super.initState();
-    _chargerDetails(); 
+    _chargerDetails();
   }
 
   Future<void> _chargerDetails() async {
@@ -112,7 +113,7 @@ class _BonTravailDetailScreenState extends State<BonTravailDetailScreen> {
                     _infoRow(Icons.location_on, 'Site', b.siteAdresse ?? 'Non défini'),
                     _infoRow(Icons.person, 'Technicien responsable', b.technicienResponsableNom ?? 'Non assigné'),
                     _infoRow(Icons.calendar_today, 'Date prévue', _formatDate(b.dateInterventionPrevue)),
-                    _infoRow(Icons.timer, 'Durée estimée', '${b.dureeEstimeeMinutes} minutes'), 
+                    _infoRow(Icons.timer, 'Durée estimée', '${b.dureeEstimeeMinutes} minutes'),
                   ],
                 ),
               ),
@@ -156,6 +157,11 @@ class _BonTravailDetailScreenState extends State<BonTravailDetailScreen> {
                 ),
               ),
             ],
+            
+            const SizedBox(height: 16),
+            MessagerieInterneWidget(bonTravailId: b.id),
+            const SizedBox(height: 16),
+            
           ],
         ),
       ),

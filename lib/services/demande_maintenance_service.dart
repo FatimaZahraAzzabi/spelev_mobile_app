@@ -110,4 +110,51 @@ class DemandeMaintenanceService {
     ApiHelper.checkStatus(res);
     return ApiHelper.unwrap(res.body) as String;
   }
+
+ 
+
+  Future<List<DemandeMaintenanceModel>> getDemandesInstallations() async {
+    final all = await getToutesDemandes();
+    return all.where((d) => d.typeDemande == 'EVALUATION').toList();
+  }
+
+  Future<List<DemandeMaintenanceModel>> getDemandesMaintenance() async {
+    final all = await getToutesDemandes();
+    return all.where((d) => d.typeDemande != 'EVALUATION').toList();
+  }
+
+  Future<Map<String, dynamic>> getDemandeAvecEvaluation(int demandeId) async {
+    final res = await http.get(
+      Uri.parse('${ApiConfig.baseUrl}/api/demandes-maintenance/$demandeId/avec-evaluation'),
+      headers: await ApiHelper.headers(),
+    );
+    ApiHelper.checkStatus(res);
+    return ApiHelper.unwrap(res.body) as Map<String, dynamic>;
+  }
+
+  Future<Map<String, dynamic>> soumettreEvaluation(
+    int evaluationId, 
+    Map<String, dynamic> dto
+  ) async {
+    final res = await http.put(
+      Uri.parse('${ApiConfig.baseUrl}/api/evaluations-ascenseur/$evaluationId/soumettre'),
+      headers: await ApiHelper.headers(),
+      body: jsonEncode(dto),
+    );
+    ApiHelper.checkStatus(res);
+    return ApiHelper.unwrap(res.body) as Map<String, dynamic>;
+  }
+
+  Future<Map<String, dynamic>> validerEvaluation(
+    int evaluationId, 
+    Map<String, dynamic> dto
+  ) async {
+    final res = await http.put(
+      Uri.parse('${ApiConfig.baseUrl}/api/evaluations-ascenseur/$evaluationId/valider'),
+      headers: await ApiHelper.headers(),
+      body: jsonEncode(dto),
+    );
+    ApiHelper.checkStatus(res);
+    return ApiHelper.unwrap(res.body) as Map<String, dynamic>;
+  }
 }

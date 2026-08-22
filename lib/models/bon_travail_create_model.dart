@@ -10,6 +10,7 @@ class BonTravailCreateModel {
   final String? priorite;
   final String? description;
   final bool visitePreventive;
+  final bool isEvaluation; 
 
   BonTravailCreateModel({
     this.demandeMaintenanceId,
@@ -23,6 +24,7 @@ class BonTravailCreateModel {
     this.priorite,
     this.description,
     this.visitePreventive = false,
+    this.isEvaluation = false,
   });
 
   Map<String, dynamic> toJson() {
@@ -38,6 +40,7 @@ class BonTravailCreateModel {
       if (priorite != null) 'priorite': priorite,
       if (description != null) 'description': description,
       'visitePreventive': visitePreventive,
+      'isEvaluation': isEvaluation, 
     };
   }
 }

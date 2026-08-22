@@ -6,7 +6,7 @@ class AssemblageModel {
   final String reference;
   final String type;
   final String? fabricant;
-  final String? dateInstallation; // Gardé en String pour simplifier l'affichage, ou DateTime
+  final String? dateInstallation; 
   final int? dureeVieEstimeeMois;
   final String? description;
   final String? imageUrl;

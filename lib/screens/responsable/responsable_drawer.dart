@@ -80,7 +80,7 @@ class _ResponsableDrawerState extends State<ResponsableDrawer> {
                   [
 
                      _buildSubMenuItem('Maintenance', '/responsable-demandes-attente', context),
-                     _buildSubMenuItem('Nouvelles installations', '/responsable-demandes-installations', context),
+                     _buildSubMenuItem('Nouvelles installations', '/responsable-demandes-installations', context), 
                      _buildSubMenuItem('Rapports à valider', '/responsable-demandes-rapports', context),
                   ],
                 ),
@@ -90,10 +90,9 @@ class _ResponsableDrawerState extends State<ResponsableDrawer> {
                 _buildMenuItem(Icons.business, 'Sites', '/responsable-site-list', context),
                 _buildMenuItem(Icons.location_city, 'Parcs', '/responsable-parc-list', context),
                 _buildMenuItem(Icons.calendar_today, 'Calendrier', '/responsable-calendrier', context),
-                _buildMenuItem(Icons.build, 'Interventions (BT)', '/responsable-interventions', context),
-                _buildMenuItem(Icons.engineering, 'Techniciens', '/responsable-techniciens', context),
                 _buildMenuItem(Icons.task, 'Mes tâches', '/responsable-mes-taches', context),
-                _buildMenuItem(Icons.person, 'Mon profil', '/responsable-profil', context),
+                _buildMenuItem(Icons.person, 'Mon Profil',  '/profil', context),
+
 
                 const Divider(color: Colors.white24, height: 1),
 

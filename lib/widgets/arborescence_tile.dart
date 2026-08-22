@@ -1,18 +1,27 @@
 import 'package:flutter/material.dart';
-import '../models/models.dart';
+import '../models/assemblage_model.dart';
+import '../models/composant_model.dart';
 import '../theme/app_theme.dart';
 
-/// Affiche un Assemblage et récursivement ses sous-assemblages + composants,
-/// sous forme d'arbre repliable (ExpansionTile).
+/// Affiche un assemblage et récursivement ses
+/// sous-assemblages + composants.
 class ArborescenceTile extends StatelessWidget {
-  final Assemblage assemblage;
+  final AssemblageModel assemblage;
   final int depth;
 
-  const ArborescenceTile({super.key, required this.assemblage, this.depth = 0});
+  const ArborescenceTile({
+    super.key,
+    required this.assemblage,
+    this.depth = 0,
+  });
 
   @override
   Widget build(BuildContext context) {
-    final hasChildren = assemblage.sousAssemblages.isNotEmpty || assemblage.composants.isNotEmpty;
+    final composants = assemblage.composants ?? [];
+    final sousAssemblages = assemblage.sousAssemblages ?? [];
+
+    final hasChildren =
+        composants.isNotEmpty || sousAssemblages.isNotEmpty;
 
     return Container(
       margin: const EdgeInsets.only(bottom: 8),
@@ -22,10 +31,15 @@ class ArborescenceTile extends StatelessWidget {
         border: Border.all(color: AppColors.border),
       ),
       child: Theme(
-        data: Theme.of(context).copyWith(dividerColor: Colors.transparent),
+        data: Theme.of(context).copyWith(
+          dividerColor: Colors.transparent,
+        ),
         child: ExpansionTile(
           initiallyExpanded: depth == 0,
-          shape: const RoundedRectangleBorder(side: BorderSide.none),
+          shape: const RoundedRectangleBorder(
+            side: BorderSide.none,
+          ),
+
           leading: Container(
             width: 34,
             height: 34,
@@ -33,17 +47,51 @@ class ArborescenceTile extends StatelessWidget {
               color: AppColors.navy.withValues(alpha: 0.08),
               borderRadius: BorderRadius.circular(8),
             ),
-            child: const Icon(Icons.account_tree_outlined, color: AppColors.navy, size: 18),
+            child: const Icon(
+              Icons.account_tree_outlined,
+              color: AppColors.navy,
+              size: 18,
+            ),
           ),
-          title: Text(assemblage.nom, style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 14)),
+
+          title: Text(
+            assemblage.nom,
+            style: const TextStyle(
+              fontWeight: FontWeight.w700,
+              fontSize: 14,
+            ),
+          ),
+
           subtitle: hasChildren
-              ? Text('${assemblage.composants.length} composant(s) · ${assemblage.sousAssemblages.length} sous-ensemble(s)',
-                  style: const TextStyle(fontSize: 11.5, color: AppColors.textSecondary))
+              ? Text(
+                  '${composants.length} composant(s) · '
+                  '${sousAssemblages.length} sous-ensemble(s)',
+                  style: const TextStyle(
+                    fontSize: 11.5,
+                    color: AppColors.textSecondary,
+                  ),
+                )
               : null,
-          childrenPadding: const EdgeInsets.only(left: 20, right: 12, bottom: 12),
+
+          childrenPadding: const EdgeInsets.only(
+            left: 20,
+            right: 12,
+            bottom: 12,
+          ),
+
           children: [
-            ...assemblage.composants.map((c) => _ComposantRow(composant: c)),
-            ...assemblage.sousAssemblages.map((a) => ArborescenceTile(assemblage: a, depth: depth + 1)),
+            ...composants.map(
+              (composant) => _ComposantRow(
+                composant: composant,
+              ),
+            ),
+
+            ...sousAssemblages.map(
+              (sousAssemblage) => ArborescenceTile(
+                assemblage: sousAssemblage,
+                depth: depth + 1,
+              ),
+            ),
           ],
         ),
       ),
@@ -52,38 +100,78 @@ class ArborescenceTile extends StatelessWidget {
 }
 
 class _ComposantRow extends StatelessWidget {
-  final Composant composant;
-  const _ComposantRow({required this.composant});
+  final ComposantModel composant;
+
+  const _ComposantRow({
+    required this.composant,
+  });
 
   @override
   Widget build(BuildContext context) {
     return Container(
       margin: const EdgeInsets.only(bottom: 6),
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+      padding: const EdgeInsets.symmetric(
+        horizontal: 12,
+        vertical: 10,
+      ),
       decoration: BoxDecoration(
         color: AppColors.background,
         borderRadius: BorderRadius.circular(10),
       ),
       child: Row(
         children: [
-          Container(width: 7, height: 7, decoration: BoxDecoration(
-            color: composant.actif ? AppColors.success : AppColors.textSecondary,
-            shape: BoxShape.circle,
-          )),
+          Container(
+            width: 7,
+            height: 7,
+            decoration: BoxDecoration(
+              color: composant.actif
+                  ? AppColors.success
+                  : AppColors.textSecondary,
+              shape: BoxShape.circle,
+            ),
+          ),
+
           const SizedBox(width: 10),
+
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(composant.nom, style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13)),
-                Text('Réf. ${composant.reference}', style: const TextStyle(fontSize: 11, color: AppColors.textSecondary)),
+                Text(
+                  composant.nom,
+                  style: const TextStyle(
+                    fontWeight: FontWeight.w600,
+                    fontSize: 13,
+                  ),
+                ),
+                Text(
+                  'Réf. ${composant.reference}',
+                  style: const TextStyle(
+                    fontSize: 11,
+                    color: AppColors.textSecondary,
+                  ),
+                ),
               ],
             ),
           ),
+
           Container(
-            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-            decoration: BoxDecoration(color: AppColors.orange.withValues(alpha: 0.12), borderRadius: BorderRadius.circular(6)),
-            child: Text(composant.type, style: const TextStyle(fontSize: 10.5, color: AppColors.orange, fontWeight: FontWeight.w700)),
+            padding: const EdgeInsets.symmetric(
+              horizontal: 8,
+              vertical: 4,
+            ),
+            decoration: BoxDecoration(
+              color: AppColors.orange.withValues(alpha: 0.12),
+              borderRadius: BorderRadius.circular(6),
+            ),
+            child: Text(
+              composant.type,
+              style: const TextStyle(
+                fontSize: 10.5,
+                color: AppColors.orange,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
           ),
         ],
       ),

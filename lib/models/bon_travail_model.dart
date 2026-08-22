@@ -62,51 +62,55 @@ class BonTravailModel {
   });
 
   factory BonTravailModel.fromJson(Map<String, dynamic> json) {
-  // Debug print
-  print('📥 Parsing BT #${json['id']}');
-  print('   duree: ${json['dureeEstimeeMinutes']} (type: ${json['dureeEstimeeMinutes'].runtimeType})');
-  print('   desc: "${json['description']}" (type: ${json['description'].runtimeType})');
+    
 
-  return BonTravailModel(
-    id: json['id']?.toInt() ?? 0,
-    statut: StatutBonTravail.values.firstWhere(
-      (e) => e.name == json['statut'],
-      orElse: () => StatutBonTravail.PLANIFIE,
-    ),
-    priorite: PrioriteDemande.values.firstWhere(
-      (e) => e.name == json['priorite'],
-      orElse: () => PrioriteDemande.NORMALE,
-    ),
-    dateInterventionPrevue: DateTime.parse(json['dateInterventionPrevue'].toString()),
-    
-    dureeEstimeeMinutes: (json['dureeEstimeeMinutes'] is int) 
-        ? json['dureeEstimeeMinutes'] 
-        : (json['dureeEstimeeMinutes'] is String ? int.tryParse(json['dureeEstimeeMinutes']) ?? 0 : 0),
-    
-    description: json['description']?.toString() ?? '',
-    
-    dateDebutReelle: json['dateDebutReelle'] != null ? DateTime.parse(json['dateDebutReelle']) : null,
-    dateFinReelle: json['dateFinReelle'] != null ? DateTime.parse(json['dateFinReelle']) : null,
-    diagnostic: json['diagnostic']?.toString(),
-    causeIdentifiee: json['causeIdentifiee']?.toString(),
-    actionRealisee: json['actionRealisee']?.toString(),
-    piecesRemplacees: json['piecesRemplacees']?.toString(),
-    essaiConcluant: json['essaiConcluant'] as bool?,
-    recommandations: json['recommandations']?.toString(),
-    demandeMaintenanceId: json['demandeMaintenanceId']?.toInt(),
-    ascenseurId: json['ascenseurId']?.toInt(),
-    ascenseurNom: json['ascenseurNom']?.toString(),
-    siteAdresse: json['siteAdresse']?.toString(),
-    parcId: json['parcId']?.toInt(),
-    parcNom: json['parcNom']?.toString(),
-    technicienResponsableId: json['technicienResponsableId']?.toInt(),
-    technicienResponsableNom: json['technicienResponsableNom']?.toString(),
-    techniciens: (json['techniciens'] as List?)?.cast<Map<String, dynamic>>() ?? [],
-    photosDemande: (json['photosDemande'] as List?)?.map((p) => PieceJointeModel.fromJson(p)).toList() ?? [],
-    piecesJointesBonTravail: (json['piecesJointesBonTravail'] as List?)?.map((p) => PieceJointeModel.fromJson(p)).toList() ?? [],
-    createdAt: json['createdAt']?.toString(),
-  );
-}
+    return BonTravailModel(
+      id: json['id']?.toInt() ?? 0,
+      
+      statut: StatutBonTravail.values.firstWhere(
+        (e) => e.name == json['statut'],
+        orElse: () => StatutBonTravail.PLANIFIE,
+      ),
+      
+      priorite: PrioriteDemande.values.firstWhere(
+        (e) => e.name == json['priorite'],
+        orElse: () => PrioriteDemande.NORMALE,
+      ),
+      
+      dateInterventionPrevue: json['dateInterventionPrevue'] != null && json['dateInterventionPrevue'] != 'null'
+          ? DateTime.parse(json['dateInterventionPrevue'].toString())
+          : DateTime.now(),
+      
+      dureeEstimeeMinutes: (json['dureeEstimeeMinutes'] is int) 
+          ? json['dureeEstimeeMinutes'] 
+          : (json['dureeEstimeeMinutes']?.toString().isNotEmpty == true ? int.tryParse(json['dureeEstimeeMinutes'].toString()) ?? 0 : 0),
+      
+      description: json['description']?.toString().isNotEmpty == true ? json['description'].toString() : 'Aucune description',
+      
+      dateDebutReelle: json['dateDebutReelle'] != null && json['dateDebutReelle'] != 'null' ? DateTime.parse(json['dateDebutReelle'].toString()) : null,
+      dateFinReelle: json['dateFinReelle'] != null && json['dateFinReelle'] != 'null' ? DateTime.parse(json['dateFinReelle'].toString()) : null,
+      
+      diagnostic: json['diagnostic']?.toString(),
+      causeIdentifiee: json['causeIdentifiee']?.toString(),
+      actionRealisee: json['actionRealisee']?.toString(),
+      piecesRemplacees: json['piecesRemplacees']?.toString(),
+      essaiConcluant: json['essaiConcluant'] as bool?,
+      recommandations: json['recommandations']?.toString(),
+      demandeMaintenanceId: json['demandeMaintenanceId']?.toInt(),
+      ascenseurId: json['ascenseurId']?.toInt(),
+      ascenseurNom: json['ascenseurNom']?.toString(),
+      siteAdresse: json['siteAdresse']?.toString(),
+      parcId: json['parcId']?.toInt(),
+      parcNom: json['parcNom']?.toString(),
+      technicienResponsableId: json['technicienResponsableId']?.toInt(),
+      technicienResponsableNom: json['technicienResponsableNom']?.toString(),
+      techniciens: (json['techniciens'] as List?)?.cast<Map<String, dynamic>>() ?? [],
+      photosDemande: (json['photosDemande'] as List?)?.map((p) => PieceJointeModel.fromJson(p)).toList() ?? [],
+      piecesJointesBonTravail: (json['piecesJointesBonTravail'] as List?)?.map((p) => PieceJointeModel.fromJson(p)).toList() ?? [],
+      createdAt: json['createdAt']?.toString(),
+    );
+  }
+
   String get statutLabel {
     switch (statut) {
       case StatutBonTravail.PLANIFIE: return 'Planifié';

@@ -1,9 +1,11 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import '../config/api_config.dart'; 
 
 class StatistiqueService {
-  final String baseUrl = "http://192.168.1.27:8080/api/statistiques";
+  String get baseUrl => '${ApiConfig.baseUrl}/api/statistiques';
+  
   final _storage = const FlutterSecureStorage();
 
   Future<String?> _getToken() async {
@@ -33,7 +35,7 @@ class StatistiqueService {
         'sitesActifs': data['sitesActifs'] ?? 0,
       };
     } else {
-      throw Exception('Erreur: ${response.statusCode}');
+      throw Exception('Erreur serveur: ${response.statusCode} - ${response.body}');
     }
   }
 }

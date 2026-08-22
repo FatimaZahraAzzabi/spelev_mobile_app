@@ -11,7 +11,8 @@ class UtilisateurModel {
   final String? specialite;
   final bool? disponible;
   final String? adresse;
-  final List<int>? parcIds; 
+  final List<int>? parcIds;
+  final String? photoUrl; 
 
   UtilisateurModel({
     required this.id,
@@ -27,6 +28,7 @@ class UtilisateurModel {
     this.disponible,
     this.adresse,
     this.parcIds,
+    this.photoUrl, 
   });
 
   factory UtilisateurModel.fromJson(Map<String, dynamic> json) {
@@ -43,6 +45,7 @@ class UtilisateurModel {
       disponible: json['disponible'] as bool?,
       adresse: json['adresse'] as String?,
       parcIds: (json['parcIds'] as List?)?.map((e) => e as int).toList(),
+      photoUrl: json['photoUrl'] as String?, 
     );
   }
 
@@ -60,6 +63,7 @@ class UtilisateurModel {
       'disponible': disponible,
       'adresse': adresse,
       'parcIds': parcIds,
+      'photoUrl': photoUrl,
     };
   }
 }

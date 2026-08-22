@@ -15,6 +15,9 @@ class AscenseurModel {
   final String? description;
   final DateTime? dateMiseEnService;
   final DateTime? dateExpirationGarantie;
+  
+  final double? coutAcquisition;
+  final String? type;
 
   final int? clientId;
   final String? clientPrenom;
@@ -44,6 +47,8 @@ class AscenseurModel {
     this.description,
     this.dateMiseEnService,
     this.dateExpirationGarantie,
+    this.coutAcquisition,
+    this.type,
     this.clientId,
     this.clientPrenom,
     this.clientNom,
@@ -77,7 +82,9 @@ class AscenseurModel {
           ? DateTime.parse(json['dateExpirationGarantie']) 
           : null,
       
-      // ✅ Lecture directe des champs à plat (pas de json['client']['...'])
+      coutAcquisition: (json['coutAcquisition'] as num?)?.toDouble(),
+      type: json['type'],
+      
       clientId: json['clientId'],
       clientPrenom: json['clientPrenom'],
       clientNom: json['clientNom'],
@@ -89,5 +96,30 @@ class AscenseurModel {
       parcId: json['parcId'],
       parcNom: json['parcNom'],
     );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'nom': nom,
+      'actif': actif,
+      'marque': marque,
+      'fabricant': fabricant,
+      'modele': modele,
+      'numeroSerie': numeroSerie,
+      'codeBarre': codeBarre,
+      'puissance': puissance,
+      'nombreEtages': nombreEtages,
+      'capacitePersonnes': capacitePersonnes,
+      'chargeMaxKg': chargeMaxKg,
+      'vitesse': vitesse,
+      'description': description,
+      'dateMiseEnService': dateMiseEnService?.toIso8601String(),
+      'dateExpirationGarantie': dateExpirationGarantie?.toIso8601String(),
+      'coutAcquisition': coutAcquisition, 
+      'type': type, 
+      'clientId': clientId,
+      'siteId': siteId,
+      'parcId': parcId,
+    };
   }
 }

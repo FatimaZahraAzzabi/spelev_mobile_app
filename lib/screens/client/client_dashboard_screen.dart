@@ -3,6 +3,7 @@ import '../../models/demande_maintenance_model.dart';
 import '../../services/demande_maintenance_service.dart';
 import '../../theme/app_theme.dart';
 import '../../widgets/badges.dart';
+import '../../widgets/notification_bell_widget.dart';
 import 'client_drawer.dart';
 
 class ClientDashboardScreen extends StatefulWidget {
@@ -27,22 +28,38 @@ class _ClientDashboardScreenState extends State<ClientDashboardScreen> {
     setState(() => _isLoading = true);
     try {
       final demandes = await _demandeService.getMesDemandes();
-      setState(() { _demandes = demandes; _isLoading = false; });
-    } catch (e) {
-      setState(() => _isLoading = false);
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Erreur: $e'), backgroundColor: Colors.red));
+        setState(() { 
+          _demandes = demandes; 
+          _isLoading = false; 
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() => _isLoading = false);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Erreur: $e'), backgroundColor: Colors.red)
+        );
       }
     }
   }
 
   int get _total => _demandes.length;
-  int get _enAttente => _demandes.where((d) => d.statut == 'EN_ATTENTE').length;
-  int get _enCours => _demandes.where((d) => d.statut == 'ASSIGNEE' || d.statut == 'EN_COURS').length;
-  int get _resolues => _demandes.where((d) => d.statut == 'RESOLUE').length;
+  int get _enAttente => _demandes.where((d) => d.statut == 'EN_ATTENTE' || d.statut == 'BROUILLON').length;
+  
+  int get _enCours => _demandes.where((d) => 
+    d.statut == 'ACCEPTEE' || d.statut == 'ASSIGNEE' || d.statut == 'EN_COURS'
+  ).length;
+  
+  int get _resolues => _demandes.where((d) => d.statut == 'RESOLUE' || d.statut == 'TERMINEE').length;
+  int get _rejetees => _demandes.where((d) => d.statut == 'REJETEE' || d.statut == 'ANNULEE').length;
 
   @override
   Widget build(BuildContext context) {
+    final demandesActives = _demandes.where((d) => 
+      d.statut == 'EN_ATTENTE' || d.statut == 'ACCEPTEE' || d.statut == 'ASSIGNEE' || d.statut == 'EN_COURS'
+    ).toList();
+
     return Scaffold(
       backgroundColor: Colors.grey[100],
       drawer: ClientDrawer(currentRoute: '/client-dashboard'),
@@ -51,12 +68,21 @@ class _ClientDashboardScreenState extends State<ClientDashboardScreen> {
         elevation: 2,
         iconTheme: const IconThemeData(color: Colors.black87),
         title: const Text('Tableau de bord', style: TextStyle(color: Colors.black87, fontWeight: FontWeight.bold)),
-        actions: [IconButton(icon: const Icon(Icons.refresh, color: AppColors.orange), onPressed: _loadDemandes)],
+        actions: [
+          const NotificationBellWidget(),
+          const SizedBox(width: 8),
+          IconButton(
+            icon: const Icon(Icons.refresh, color: AppColors.orange),
+            onPressed: _loadDemandes,
+            tooltip: 'Actualiser',
+          ),
+        ],
       ),
       body: _isLoading
           ? const Center(child: CircularProgressIndicator(color: AppColors.orange))
           : RefreshIndicator(
-              onRefresh: _loadDemandes,
+              onRefresh: _loadDemandes, 
+              color: AppColors.orange,
               child: SingleChildScrollView(
                 physics: const AlwaysScrollableScrollPhysics(),
                 padding: const EdgeInsets.all(16),
@@ -67,6 +93,8 @@ class _ClientDashboardScreenState extends State<ClientDashboardScreen> {
                     const SizedBox(height: 4),
                     const Text('Voici le résumé de vos demandes de maintenance.', style: TextStyle(color: Colors.black54, fontSize: 14)),
                     const SizedBox(height: 24),
+                    
+                    // Statistiques
                     Row(children: [
                       _buildStatCard('Total', '$_total', Colors.blue, Icons.receipt_long),
                       const SizedBox(width: 12),
@@ -78,14 +106,29 @@ class _ClientDashboardScreenState extends State<ClientDashboardScreen> {
                       const SizedBox(width: 12),
                       _buildStatCard('Résolues', '$_resolues', Colors.green, Icons.check_circle),
                     ]),
+                    
                     const SizedBox(height: 32),
                     const Text('Demandes récentes', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.black87)),
                     const SizedBox(height: 16),
-                    if (_demandes.isEmpty)
-                      const Padding(padding: EdgeInsets.all(32), child: Center(child: Text('Aucune demande enregistrée', style: TextStyle(color: Colors.grey))))
+                    
+                    if (demandesActives.isEmpty)
+                      Padding(
+                        padding: const EdgeInsets.all(32),
+                        child: Center(
+                          child: Column(
+                            children: [
+                              Icon(Icons.check_circle_outline, size: 64, color: Colors.grey[400]),
+                              const SizedBox(height: 12),
+                              Text('Aucune demande active', style: TextStyle(color: Colors.grey[600], fontSize: 15)),
+                            ],
+                          ),
+                        ),
+                      )
                     else
-                      ..._demandes.take(3).map(_buildDemandeCard),
+                      ...demandesActives.take(3).map(_buildDemandeCard),
+                      
                     const SizedBox(height: 24),
+                    
                     SizedBox(
                       width: double.infinity,
                       child: ElevatedButton.icon(

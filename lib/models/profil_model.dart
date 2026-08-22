@@ -7,6 +7,7 @@ class ProfilModel {
   final String? telephone;
   final String? nomEntreprise;
   final String? adresse;
+  final String? specialite; 
   final bool? actif;
   final String? photoUrl;
   final DateTime? createdAt;
@@ -24,6 +25,7 @@ class ProfilModel {
     this.telephone,
     this.nomEntreprise,
     this.adresse,
+    this.specialite, 
     this.actif,
     this.photoUrl,
     this.createdAt,
@@ -39,6 +41,7 @@ class ProfilModel {
       telephone: json['telephone'],
       nomEntreprise: json['nomEntreprise'],
       adresse: json['adresse'],
+      specialite: json['specialite'], 
       actif: json['actif'],
       photoUrl: json['photoUrl'],
       createdAt: json['createdAt'] != null
